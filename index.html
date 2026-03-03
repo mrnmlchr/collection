@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pokémon TCG Virtual Binder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --gold: #FFD700;
+      --red: #CC0000;
+      --blue: #3B4CCA;
+    }
+    body { font-family: 'Nunito', sans-serif; }
+
+    /* ── Background ── */
+    .bg-poke {
+      background: radial-gradient(ellipse at top, #0d1b3e 0%, #1a1a2e 55%, #0a0a18 100%);
+      min-height: 100vh;
+    }
+
+    /* ── Title font ── */
+    .press { font-family: 'Press Start 2P', cursive; }
+
+    /* ── Stars background ── */
+    .stars {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 0;
+      background-image:
+        radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.5) 0%, transparent 80%),
+        radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.4) 0%, transparent 80%),
+        radial-gradient(1px 1px at 55% 25%, rgba(255,255,255,0.6) 0%, transparent 80%),
+        radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.3) 0%, transparent 80%),
+        radial-gradient(1px 1px at 85% 40%, rgba(255,255,255,0.5) 0%, transparent 80%),
+        radial-gradient(1px 1px at 95% 10%, rgba(255,255,255,0.4) 0%, transparent 80%),
+        radial-gradient(1px 1px at 20% 90%, rgba(255,255,255,0.3) 0%, transparent 80%),
+        radial-gradient(1px 1px at 45% 70%, rgba(255,255,255,0.5) 0%, transparent 80%),
+        radial-gradient(1px 1px at 60% 50%, rgba(255,255,255,0.2) 0%, transparent 80%),
+        radial-gradient(1px 1px at 75% 5%,  rgba(255,255,255,0.6) 0%, transparent 80%);
+    }
+
+    /* ── Binder ── */
+    .binder-wrap {
+      background: linear-gradient(135deg, #1c1c2a, #252535);
+      border: 3px solid #3a3a5c;
+      border-radius: 18px;
+      box-shadow: 0 0 60px rgba(59,76,202,0.25), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .binder-spine {
+      background: linear-gradient(180deg, #1a1a2e, #0d0d1f);
+      border-right: 3px solid #3a3a5c;
+      box-shadow: inset -4px 0 12px rgba(0,0,0,0.5);
+      position: relative;
+    }
+    .ring {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 4px solid #4a4a6a;
+      background: radial-gradient(circle at 35% 35%, #8a8aaa, #3a3a5a);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.15);
+      position: relative; z-index: 2;
+    }
+    .ring::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #1a1a2e;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+    }
+
+    /* ── Card slot ── */
+    .card-slot {
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      cursor: pointer;
+      user-select: none;
+    }
+    .card-slot:hover { transform: translateY(-6px) scale(1.03); }
+    .card-slot.owned {
+      box-shadow: 0 0 18px rgba(255,215,0,0.55), 0 0 6px rgba(255,215,0,0.3);
+    }
+    /* dimming handled per-section in card-face-placeholder CSS */
+
+    .card-frame {
+      background: linear-gradient(135deg, #2a2a45, #1e1e35);
+      border: 2px solid #3a3a6a;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    .card-slot.owned .card-frame {
+      border-color: #FFD700;
+    }
+    .card-img-wrap {
+      background: #111120;
+      overflow: hidden;
+      position: relative;
+    }
+    .card-img-wrap img {
+      width: 100%; aspect-ratio: 63/88;
+      object-fit: cover;
+      display: block;
+      transition: filter 0.3s;
+    }
+    .card-img-wrap img.hidden { display: none; }
+    .card-face-placeholder {
+      width: 100%;
+      aspect-ratio: 63/88;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-radius: 8px 8px 0 0;
+      background: #1a1a2e;
+      font-family: 'Nunito', sans-serif;
+    }
+    /* card header band */
+    .pf-header {
+      padding: 6px 8px 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .pf-header-name { font-size: 9px; font-weight:900; color:#fff; line-height:1.1; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .pf-hp { font-size: 8px; font-weight:900; color:rgba(255,255,255,0.7); white-space:nowrap; margin-left:4px; }
+    /* art area */
+    .pf-art {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .pf-art-bg {
+      position:absolute; inset:0;
+      opacity:0.18;
+      background-size: 40px 40px;
+    }
+    .pf-emo { font-size: 2.8rem; line-height:1; position:relative; z-index:1; filter:drop-shadow(0 2px 8px rgba(0,0,0,0.6)); }
+    /* bottom strip */
+    .pf-footer {
+      padding: 4px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      background: rgba(0,0,0,0.4);
+      gap: 4px;
+    }
+    .pf-set { font-size:7px; color:rgba(255,255,255,0.35); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; }
+    .pf-num  { font-size:7px; color:rgba(255,255,255,0.4); white-space:nowrap; }
+    /* type-based header colors */
+    .pfh-fire      { background: linear-gradient(90deg,#b22222,#e74c3c); }
+    .pfh-water     { background: linear-gradient(90deg,#1a5f7a,#2980b9); }
+    .pfh-grass     { background: linear-gradient(90deg,#1e6b35,#27ae60); }
+    .pfh-electric  { background: linear-gradient(90deg,#b8860b,#f1c40f); }
+    .pfh-psychic   { background: linear-gradient(90deg,#6b2d8b,#9b59b6); }
+    .pfh-dark      { background: linear-gradient(90deg,#1a1a2e,#2c2c4a); }
+    .pfh-dragon    { background: linear-gradient(90deg,#1a237e,#3949ab); }
+    .pfh-fighting  { background: linear-gradient(90deg,#7b341e,#c0392b); }
+    .pfh-steel     { background: linear-gradient(90deg,#4a5568,#718096); }
+    .pfh-colorless { background: linear-gradient(90deg,#2d3748,#4a5568); }
+    .pfh-fairy     { background: linear-gradient(90deg,#880241,#e91e8c); }
+    .pfh-normal    { background: linear-gradient(90deg,#2d3748,#4a5568); }
+    .pfh-trainer   { background: linear-gradient(90deg,#1a3a1e,#2d6a4f); }
+    /* art bg patterns by type */
+    .pfbg-fire     { background-image: radial-gradient(circle, #e74c3c 1px, transparent 1px); background-color:#b22222; }
+    .pfbg-water    { background-image: radial-gradient(circle, #2980b9 1px, transparent 1px); background-color:#1a5f7a; }
+    .pfbg-grass    { background-image: radial-gradient(circle, #27ae60 1px, transparent 1px); background-color:#1e6b35; }
+    .pfbg-electric { background-image: radial-gradient(circle, #f1c40f 1px, transparent 1px); background-color:#b8860b; }
+    .pfbg-psychic  { background-image: radial-gradient(circle, #9b59b6 1px, transparent 1px); background-color:#6b2d8b; }
+    .pfbg-dark     { background-image: radial-gradient(circle, #4a4a6a 1px, transparent 1px); background-color:#1a1a2e; }
+    .pfbg-dragon   { background-image: radial-gradient(circle, #3949ab 1px, transparent 1px); background-color:#1a237e; }
+    .pfbg-fighting { background-image: radial-gradient(circle, #c0392b 1px, transparent 1px); background-color:#7b341e; }
+    .pfbg-steel    { background-image: radial-gradient(circle, #718096 1px, transparent 1px); background-color:#4a5568; }
+    .pfbg-colorless{ background-image: radial-gradient(circle, #666 1px, transparent 1px);    background-color:#2d3748; }
+    .pfbg-fairy    { background-image: radial-gradient(circle, #e91e8c 1px, transparent 1px); background-color:#880241; }
+    .pfbg-normal   { background-image: radial-gradient(circle, #666 1px, transparent 1px);    background-color:#2d3748; }
+    .pfbg-trainer  { background-image: radial-gradient(circle, #2d6a4f 1px, transparent 1px); background-color:#1a3a1e; }
+    /* owned glow overlay */
+    .card-slot.owned .pf-art::after {
+      content:'';
+      position:absolute; inset:0;
+      background: radial-gradient(ellipse at 50% 40%, rgba(255,215,0,0.22) 0%, transparent 70%);
+      pointer-events:none;
+    }
+    /* missing dim */
+    .card-slot.not-owned .pf-header,
+    .card-slot.not-owned .pf-art,
+    .card-slot.not-owned .pf-footer { filter: grayscale(80%) brightness(0.5); }
+    .own-badge {
+      position: absolute; top: 6px; right: 6px;
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      font-weight: 900;
+      z-index: 5;
+      border: 2px solid;
+      transition: all 0.2s;
+    }
+    .own-badge.yes {
+      background: rgba(255,215,0,0.9);
+      border-color: #fff;
+      color: #000;
+    }
+    .own-badge.no {
+      background: rgba(30,30,50,0.85);
+      border-color: #555;
+      color: #555;
+    }
+    .rarity-badge {
+      font-size: 9px;
+      letter-spacing: 0.5px;
+      padding: 2px 6px;
+      border-radius: 999px;
+    }
+
+    /* Rarity colors */
+    .r-common    { background:#4a4a4a; color:#ccc; }
+    .r-uncommon  { background:#2d6a4f; color:#b7e4c7; }
+    .r-rare      { background:#1a3a8f; color:#90c5ff; }
+    .r-holo      { background: linear-gradient(90deg,#7928ca,#ff0080); color:#fff; }
+    .r-ultra     { background: linear-gradient(90deg,#f7971e,#ffd200); color:#000; }
+    .r-secret    { background: linear-gradient(90deg,#c0392b,#e74c3c); color:#fff; }
+    .r-ex        { background: linear-gradient(90deg,#1a1a2e,#16213e); color:#FFD700; border:1px solid #FFD700; }
+    .r-mega      { background: linear-gradient(90deg,#6a0dad,#cc0000,#f7971e); color:#fff; font-weight:900; letter-spacing:0.5px; }
+
+    /* Type pill colors */
+    .t-fire      { background:#c0392b22; color:#e74c3c; border:1px solid #e74c3c44; }
+    .t-water     { background:#1a5f7a22; color:#5dade2; border:1px solid #5dade244; }
+    .t-grass     { background:#1e8449 22; color:#58d68d; border:1px solid #58d68d44; }
+    .t-electric  { background:#d4ac0d22; color:#f4d03f; border:1px solid #f4d03f44; }
+    .t-psychic   { background:#7d3c9822; color:#c39bd3; border:1px solid #c39bd344; }
+    .t-dark      { background:#1c1c1c22; color:#aaaacc; border:1px solid #aaaacc44; }
+    .t-dragon    { background:#1a237e22; color:#7986cb; border:1px solid #7986cb44; }
+    .t-fighting  { background:#7b341e22; color:#e59866; border:1px solid #e5986644; }
+    .t-steel     { background:#5d6d7e22; color:#aab7c4; border:1px solid #aab7c444; }
+    .t-colorless { background:#2c2c3b22; color:#cccccc; border:1px solid #cccccc33; }
+    .t-fairy     { background:#88024122; color:#f48fb1; border:1px solid #f48fb1aa; }
+    .t-normal    { background:#2c2c3b22; color:#cccccc; border:1px solid #cccccc33; }
+    .t-trainer   { background:#1a2a1a22; color:#a8d8a8; border:1px solid #a8d8a844; }
+
+    /* ── Stat cards ── */
+    .stat-card {
+      background: linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+    }
+
+    /* ── Filter pills ── */
+    .filter-btn {
+      transition: all 0.2s;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 6px 18px;
+      border: 2px solid transparent;
+      cursor: pointer;
+    }
+    .filter-btn.active { border-color: #FFD700; background: rgba(255,215,0,0.15); color: #FFD700; }
+    .filter-btn:not(.active) { background: rgba(255,255,255,0.06); color: #aaa; }
+    .filter-btn:not(.active):hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+    /* ── Page nav ── */
+    .nav-btn {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: rgba(255,215,0,0.15);
+      border: 2px solid #FFD700;
+      color: #FFD700;
+      font-size: 20px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover { background: rgba(255,215,0,0.35); }
+    .nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+    /* ── Progress bar ── */
+    .progress-bar-bg { background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; height: 8px; }
+    .progress-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg,#3B4CCA,#FFD700); transition: width 0.5s ease; }
+
+    /* ── Pikachu loader ── */
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+    .bounce { animation: bounce 0.9s infinite ease-in-out; }
+
+    /* ── Shiny sparkle on owned card hover ── */
+    @keyframes shimmer {
+      0%   { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    .card-slot.owned:hover .card-frame {
+      background: linear-gradient(135deg, #2a2a45, #1e1e35);
+    }
+    .card-slot.owned:hover .card-img-wrap::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.15) 50%, transparent 65%);
+      background-size: 200% 100%;
+      animation: shimmer 1s infinite linear;
+      pointer-events: none;
+    }
+
+    /* ── Search ── */
+    .search-input {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      color: #fff;
+      padding: 8px 18px 8px 42px;
+      width: 100%;
+      outline: none;
+      transition: border 0.2s;
+    }
+    .search-input:focus { border-color: #FFD700; }
+    .search-input::placeholder { color: #666; }
+
+    /* ── Select ── */
+    .poke-select {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      color: #fff;
+      padding: 8px 16px;
+      outline: none;
+      cursor: pointer;
+    }
+    .poke-select option { background: #1a1a2e; }
+
+    /* ── Empty state ── */
+    .empty-state { text-align: center; padding: 60px 20px; color: #555; }
+
+    /* ── Tooltip ── */
+    .tooltip { position: relative; }
+    .tooltip:hover .tooltip-box { opacity: 1; pointer-events: auto; }
+    .tooltip-box {
+      opacity: 0; pointer-events: none;
+      position: absolute; bottom: calc(100% + 6px); left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10,10,20,0.95);
+      border: 1px solid #FFD700;
+      color: #FFD700;
+      font-size: 11px; font-weight: 700;
+      padding: 4px 10px; border-radius: 6px;
+      white-space: nowrap;
+      transition: opacity 0.2s;
+      z-index: 50;
+    }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0d0d1f; }
+    ::-webkit-scrollbar-thumb { background: #3a3a6a; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-poke">
+  <div class="stars"></div>
+
+  <div class="relative z-10 max-w-5xl mx-auto px-4 py-8">
+
+    <!-- ── HEADER ── -->
+    <header class="text-center mb-8">
+      <div class="flex items-center justify-center gap-3 mb-2">
+        <span class="text-4xl bounce">⚡</span>
+        <h1 class="press text-yellow-400 text-xl md:text-2xl leading-tight drop-shadow-[0_0_18px_rgba(255,215,0,0.6)]">
+          TCG Binder
+        </h1>
+        <span class="text-4xl bounce" style="animation-delay:0.15s">⚡</span>
+      </div>
+      <p class="text-slate-400 text-sm mt-1">Your Virtual Pokémon Card Collection</p>
+    </header>
+
+    <!-- ── STATS ── -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div class="stat-card p-4 text-center">
+        <div class="text-2xl font-black text-yellow-400" id="stat-owned">0</div>
+        <div class="text-xs text-slate-400 mt-1">Cards Owned</div>
+      </div>
+      <div class="stat-card p-4 text-center">
+        <div class="text-2xl font-black text-blue-400" id="stat-total">188</div>
+        <div class="text-xs text-slate-400 mt-1">Total Cards</div>
+        <div class="text-[10px] text-slate-600 mt-0.5">132 base · 56 secret</div>
+      </div>
+      <div class="stat-card p-4 text-center">
+        <div class="text-lg font-black text-green-400" id="stat-value">₱0</div>
+        <div class="text-xs text-slate-400 mt-1">Collection Value</div>
+      </div>
+      <div class="stat-card p-4 text-center">
+        <div class="text-2xl font-black text-purple-400" id="stat-pct">0%</div>
+        <div class="text-xs text-slate-400 mt-1">Completion</div>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-bar-bg mb-6">
+      <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+    </div>
+
+    <!-- ── FILTERS ── -->
+    <div class="flex flex-wrap gap-3 items-center mb-6">
+      <!-- Search -->
+      <div class="relative flex-1 min-w-[180px]">
+        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+        <input id="search" type="text" class="search-input" placeholder="Search cards…" oninput="render()" />
+      </div>
+      <!-- Set filter -->
+      <select id="set-filter" class="poke-select text-sm" onchange="render()">
+        <option value="">All Sets</option>
+      </select>
+      <!-- Type filter -->
+      <select id="type-filter" class="poke-select text-sm" onchange="render()">
+        <option value="">All Types</option>
+      </select>
+      <!-- Owned filter -->
+      <div class="flex gap-2">
+        <button class="filter-btn active" data-filter="all"       onclick="setFilter('all',this)">All</button>
+        <button class="filter-btn"        data-filter="owned"     onclick="setFilter('owned',this)">✅ Owned</button>
+        <button class="filter-btn"        data-filter="not-owned" onclick="setFilter('not-owned',this)">❌ Missing</button>
+      </div>
+      <!-- Sort -->
+      <select id="sort" class="poke-select text-sm" onchange="render()">
+        <option value="default">Sort: Default</option>
+        <option value="name">Name A–Z</option>
+        <option value="value-hi">Value ↑</option>
+        <option value="value-lo">Value ↓</option>
+        <option value="set">By Set</option>
+      </select>
+    </div>
+
+    <!-- ── BINDER ── -->
+    <div class="binder-wrap p-4 md:p-6">
+
+      <!-- Binder top label -->
+      <div class="flex items-center gap-2 mb-5">
+        <div class="h-px flex-1 bg-gradient-to-r from-transparent to-yellow-400/30"></div>
+        <span class="press text-yellow-400 text-[9px] tracking-widest opacity-70">MEGA EVOLUTION · 132 + 56 SECRET</span>
+        <div class="h-px flex-1 bg-gradient-to-l from-transparent to-yellow-400/30"></div>
+      </div>
+
+      <!-- Page header info -->
+      <div class="flex items-center justify-between mb-4 text-slate-500 text-xs">
+        <span id="page-info">Page 1 / 1</span>
+        <span id="showing-info">Showing 0 cards</span>
+      </div>
+
+      <!-- Open binder spread -->
+      <div class="flex gap-0">
+        <!-- Spine -->
+        <div class="binder-spine w-10 flex flex-col items-center justify-around py-4 rounded-l-xl" style="min-height:420px">
+          <div class="ring"></div>
+          <div class="ring"></div>
+          <div class="ring"></div>
+          <div class="ring"></div>
+          <div class="ring"></div>
+        </div>
+
+        <!-- Pages grid -->
+        <div class="flex-1 min-w-0 pl-4">
+          <div id="card-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <!-- Cards injected here -->
+          </div>
+          <!-- Empty state -->
+          <div id="empty-state" class="empty-state hidden">
+            <div class="text-5xl mb-4">😢</div>
+            <div class="text-slate-500 font-bold">No cards found</div>
+            <div class="text-slate-600 text-sm mt-1">Try adjusting your filters</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PAGE NAVIGATION ── -->
+      <div class="flex items-center justify-center gap-6 mt-6">
+        <button class="nav-btn" id="btn-prev" onclick="prevPage()" disabled>‹</button>
+        <div id="page-dots" class="flex gap-2"></div>
+        <button class="nav-btn" id="btn-next" onclick="nextPage()">›</button>
+      </div>
+
+    </div><!-- end binder -->
+
+    <!-- ── LEGEND ── -->
+    <div class="mt-6 flex flex-wrap gap-4 justify-center text-xs text-slate-500">
+      <span class="flex items-center gap-1"><span class="w-4 h-4 rounded-full bg-yellow-400/80 inline-block"></span> Owned</span>
+      <span class="flex items-center gap-1"><span class="w-4 h-4 rounded-full border border-slate-600 inline-block"></span> Missing</span>
+      <span class="flex items-center gap-1">💡 Click card to toggle owned</span>
+    </div>
+
+    <footer class="text-center text-slate-700 text-xs mt-8">
+      Pokémon & Pokémon TCG are © Nintendo / Creatures Inc. / GAME FREAK · Fan project only
+    </footer>
+  </div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   CARD DATA  – prices are approximate Philippine Peso market
+═══════════════════════════════════════════════════════════ */
+const ALL_CARDS = [
+  // ── MEGA EVOLUTION SET  (Sep 26, 2025 · 188 cards) ──
+
+  // ── Grass Pokémon ──
+  { id:'meg1-1',   name:'Bulbasaur',         set:'Mega Evolution', num:'1',   rarity:'Common',       type:'Grass',     php:25   },
+  { id:'meg1-2',   name:'Ivysaur',           set:'Mega Evolution', num:'2',   rarity:'Uncommon',     type:'Grass',     php:50   },
+  { id:'meg1-3',   name:'Mega Venusaur ex',  set:'Mega Evolution', num:'3',   rarity:'Double Rare',  type:'Grass',     php:950  },
+  { id:'meg1-4',   name:'Exeggcute',         set:'Mega Evolution', num:'4',   rarity:'Common',       type:'Grass',     php:20   },
+  { id:'meg1-5',   name:'Exeggutor',         set:'Mega Evolution', num:'5',   rarity:'Rare',         type:'Grass',     php:180  },
+  { id:'meg1-6',   name:'Tangela',           set:'Mega Evolution', num:'6',   rarity:'Common',       type:'Grass',     php:20   },
+  { id:'meg1-7',   name:'Tangrowth',         set:'Mega Evolution', num:'7',   rarity:'Rare',         type:'Grass',     php:160  },
+  { id:'meg1-8',   name:'Chikorita',         set:'Mega Evolution', num:'8',   rarity:'Common',       type:'Grass',     php:20   },
+  { id:'meg1-9',   name:'Bayleef',           set:'Mega Evolution', num:'9',   rarity:'Uncommon',     type:'Grass',     php:40   },
+  { id:'meg1-10',  name:'Meganium',          set:'Mega Evolution', num:'10',  rarity:'Rare',         type:'Grass',     php:250  },
+  { id:'meg1-11',  name:'Shuckle',           set:'Mega Evolution', num:'11',  rarity:'Common',       type:'Grass',     php:30   },
+  { id:'meg1-12',  name:'Celebi',            set:'Mega Evolution', num:'12',  rarity:'Rare',         type:'Psychic',   php:380  },
+  { id:'meg1-13',  name:'Seedot',            set:'Mega Evolution', num:'13',  rarity:'Common',       type:'Grass',     php:20   },
+  { id:'meg1-14',  name:'Nuzleaf',           set:'Mega Evolution', num:'14',  rarity:'Uncommon',     type:'Grass',     php:35   },
+  { id:'meg1-15',  name:'Shiftry',           set:'Mega Evolution', num:'15',  rarity:'Rare',         type:'Grass',     php:150  },
+  { id:'meg1-16',  name:'Nincada',           set:'Mega Evolution', num:'16',  rarity:'Common',       type:'Grass',     php:20   },
+  { id:'meg1-17',  name:'Ninjask',           set:'Mega Evolution', num:'17',  rarity:'Uncommon',     type:'Grass',     php:45   },
+  { id:'meg1-18',  name:'Dhelmise',          set:'Mega Evolution', num:'18',  rarity:'Rare',         type:'Grass',     php:200  },
+
+  // ── Fire Pokémon ──
+  { id:'meg1-19',  name:'Vulpix',            set:'Mega Evolution', num:'19',  rarity:'Common',       type:'Fire',      php:25   },
+  { id:'meg1-20',  name:'Ninetales',         set:'Mega Evolution', num:'20',  rarity:'Rare',         type:'Fire',      php:280  },
+  { id:'meg1-21',  name:'Numel',             set:'Mega Evolution', num:'21',  rarity:'Common',       type:'Fire',      php:20   },
+  { id:'meg1-22',  name:'Mega Camerupt ex',  set:'Mega Evolution', num:'22',  rarity:'Double Rare',  type:'Fire',      php:880  },
+  { id:'meg1-23',  name:'Litleo',            set:'Mega Evolution', num:'23',  rarity:'Common',       type:'Fire',      php:20   },
+  { id:'meg1-24',  name:'Pyroar',            set:'Mega Evolution', num:'24',  rarity:'Rare',         type:'Fire',      php:160  },
+  { id:'meg1-25',  name:'Volcanion',         set:'Mega Evolution', num:'25',  rarity:'Rare',         type:'Fire',      php:300  },
+  { id:'meg1-26',  name:'Scorbunny',         set:'Mega Evolution', num:'26',  rarity:'Common',       type:'Fire',      php:30   },
+  { id:'meg1-27',  name:'Raboot',            set:'Mega Evolution', num:'27',  rarity:'Uncommon',     type:'Fire',      php:50   },
+  { id:'meg1-28',  name:'Cinderace',         set:'Mega Evolution', num:'28',  rarity:'Rare',         type:'Fire',      php:250  },
+  { id:'meg1-29',  name:'Sizzlipede',        set:'Mega Evolution', num:'29',  rarity:'Common',       type:'Fire',      php:20   },
+  { id:'meg1-30',  name:'Centiskorch',       set:'Mega Evolution', num:'30',  rarity:'Rare',         type:'Fire',      php:170  },
+  { id:'meg1-31',  name:'Chi-Yu',            set:'Mega Evolution', num:'31',  rarity:'Rare',         type:'Fire',      php:350  },
+
+  // ── Water Pokémon ──
+  { id:'meg1-32',  name:'Mantine',           set:'Mega Evolution', num:'32',  rarity:'Common',       type:'Water',     php:20   },
+  { id:'meg1-33',  name:'Corphish',          set:'Mega Evolution', num:'33',  rarity:'Common',       type:'Water',     php:20   },
+  { id:'meg1-34',  name:'Kyogre',            set:'Mega Evolution', num:'34',  rarity:'Rare',         type:'Water',     php:480  },
+  { id:'meg1-35',  name:'Snover',            set:'Mega Evolution', num:'35',  rarity:'Common',       type:'Water',     php:20   },
+  { id:'meg1-36',  name:'Mega Abomasnow ex', set:'Mega Evolution', num:'36',  rarity:'Double Rare',  type:'Water',     php:850  },
+  { id:'meg1-37',  name:'Clauncher',         set:'Mega Evolution', num:'37',  rarity:'Common',       type:'Water',     php:20   },
+  { id:'meg1-38',  name:'Clawitzer',         set:'Mega Evolution', num:'38',  rarity:'Rare',         type:'Water',     php:180  },
+  { id:'meg1-39',  name:'Sobble',            set:'Mega Evolution', num:'39',  rarity:'Common',       type:'Water',     php:25   },
+  { id:'meg1-40',  name:'Drizzile',          set:'Mega Evolution', num:'40',  rarity:'Uncommon',     type:'Water',     php:45   },
+  { id:'meg1-41',  name:'Inteleon',          set:'Mega Evolution', num:'41',  rarity:'Rare',         type:'Water',     php:220  },
+  { id:'meg1-42',  name:'Snom',              set:'Mega Evolution', num:'42',  rarity:'Common',       type:'Water',     php:20   },
+  { id:'meg1-43',  name:'Frosmoth',          set:'Mega Evolution', num:'43',  rarity:'Rare',         type:'Water',     php:160  },
+  { id:'meg1-44',  name:'Eiscue',            set:'Mega Evolution', num:'44',  rarity:'Common',       type:'Water',     php:20   },
+
+  // ── Electric Pokémon ──
+  { id:'meg1-45',  name:'Magnemite',         set:'Mega Evolution', num:'45',  rarity:'Common',       type:'Electric',  php:25   },
+  { id:'meg1-46',  name:'Magneton',          set:'Mega Evolution', num:'46',  rarity:'Uncommon',     type:'Electric',  php:45   },
+  { id:'meg1-47',  name:'Magnezone',         set:'Mega Evolution', num:'47',  rarity:'Rare',         type:'Electric',  php:200  },
+  { id:'meg1-48',  name:'Raikou',            set:'Mega Evolution', num:'48',  rarity:'Rare',         type:'Electric',  php:380  },
+  { id:'meg1-49',  name:'Electrike',         set:'Mega Evolution', num:'49',  rarity:'Common',       type:'Electric',  php:20   },
+  { id:'meg1-50',  name:'Mega Manectric ex', set:'Mega Evolution', num:'50',  rarity:'Double Rare',  type:'Electric',  php:900  },
+  { id:'meg1-51',  name:'Pachirisu',         set:'Mega Evolution', num:'51',  rarity:'Common',       type:'Electric',  php:30   },
+  { id:'meg1-52',  name:'Helioptile',        set:'Mega Evolution', num:'52',  rarity:'Common',       type:'Electric',  php:20   },
+  { id:'meg1-53',  name:'Heliolisk',         set:'Mega Evolution', num:'53',  rarity:'Rare',         type:'Electric',  php:180  },
+
+  // ── Psychic Pokémon ──
+  { id:'meg1-54',  name:'Abra',              set:'Mega Evolution', num:'54',  rarity:'Common',       type:'Psychic',   php:20   },
+  { id:'meg1-55',  name:'Kadabra',           set:'Mega Evolution', num:'55',  rarity:'Uncommon',     type:'Psychic',   php:50   },
+  { id:'meg1-56',  name:'Alakazam',          set:'Mega Evolution', num:'56',  rarity:'Rare',         type:'Psychic',   php:280  },
+  { id:'meg1-57',  name:'Jynx',              set:'Mega Evolution', num:'57',  rarity:'Rare',         type:'Psychic',   php:150  },
+  { id:'meg1-58',  name:'Ralts',             set:'Mega Evolution', num:'58',  rarity:'Common',       type:'Psychic',   php:20   },
+  { id:'meg1-59',  name:'Kirlia',            set:'Mega Evolution', num:'59',  rarity:'Uncommon',     type:'Psychic',   php:40   },
+  { id:'meg1-60',  name:'Mega Gardevoir ex', set:'Mega Evolution', num:'60',  rarity:'Double Rare',  type:'Psychic',   php:2200 },
+  { id:'meg1-61',  name:'Shedinja',          set:'Mega Evolution', num:'61',  rarity:'Rare',         type:'Psychic',   php:320  },
+  { id:'meg1-62',  name:'Spoink',            set:'Mega Evolution', num:'62',  rarity:'Common',       type:'Psychic',   php:20   },
+  { id:'meg1-63',  name:'Grumpig',           set:'Mega Evolution', num:'63',  rarity:'Rare',         type:'Psychic',   php:150  },
+  { id:'meg1-64',  name:'Xerneas',           set:'Mega Evolution', num:'64',  rarity:'Rare',         type:'Psychic',   php:350  },
+  { id:'meg1-65',  name:'Greavard',          set:'Mega Evolution', num:'65',  rarity:'Common',       type:'Psychic',   php:20   },
+  { id:'meg1-66',  name:'Houndstone',        set:'Mega Evolution', num:'66',  rarity:'Rare',         type:'Psychic',   php:200  },
+  { id:'meg1-67',  name:'Gimmighoul',        set:'Mega Evolution', num:'67',  rarity:'Common',       type:'Psychic',   php:30   },
+
+  // ── Fighting Pokémon ──
+  { id:'meg1-68',  name:'Sandshrew',         set:'Mega Evolution', num:'68',  rarity:'Common',       type:'Fighting',  php:20   },
+  { id:'meg1-69',  name:'Sandslash',         set:'Mega Evolution', num:'69',  rarity:'Rare',         type:'Fighting',  php:160  },
+  { id:'meg1-70',  name:'Onix',              set:'Mega Evolution', num:'70',  rarity:'Common',       type:'Fighting',  php:25   },
+  { id:'meg1-71',  name:'Tyrogue',           set:'Mega Evolution', num:'71',  rarity:'Common',       type:'Fighting',  php:20   },
+  { id:'meg1-72',  name:'Makuhita',          set:'Mega Evolution', num:'72',  rarity:'Common',       type:'Fighting',  php:20   },
+  { id:'meg1-73',  name:'Hariyama',          set:'Mega Evolution', num:'73',  rarity:'Rare',         type:'Fighting',  php:150  },
+  { id:'meg1-74',  name:'Lunatone',          set:'Mega Evolution', num:'74',  rarity:'Rare',         type:'Psychic',   php:160  },
+  { id:'meg1-75',  name:'Solrock',           set:'Mega Evolution', num:'75',  rarity:'Rare',         type:'Fighting',  php:160  },
+  { id:'meg1-76',  name:'Riolu',             set:'Mega Evolution', num:'76',  rarity:'Common',       type:'Fighting',  php:30   },
+  { id:'meg1-77',  name:'Mega Lucario ex',   set:'Mega Evolution', num:'77',  rarity:'Double Rare',  type:'Fighting',  php:1800 },
+  { id:'meg1-78',  name:'Croagunk',          set:'Mega Evolution', num:'78',  rarity:'Common',       type:'Psychic',   php:20   },
+  { id:'meg1-79',  name:'Toxicroak',         set:'Mega Evolution', num:'79',  rarity:'Rare',         type:'Psychic',   php:160  },
+  { id:'meg1-80',  name:'Marshadow',         set:'Mega Evolution', num:'80',  rarity:'Rare',         type:'Fighting',  php:420  },
+  { id:'meg1-81',  name:'Stonjourner',       set:'Mega Evolution', num:'81',  rarity:'Rare',         type:'Fighting',  php:150  },
+  { id:'meg1-82',  name:'Nacli',             set:'Mega Evolution', num:'82',  rarity:'Common',       type:'Fighting',  php:20   },
+  { id:'meg1-83',  name:'Naclstack',         set:'Mega Evolution', num:'83',  rarity:'Uncommon',     type:'Fighting',  php:35   },
+  { id:'meg1-84',  name:'Garganacl',         set:'Mega Evolution', num:'84',  rarity:'Rare',         type:'Fighting',  php:220  },
+
+  // ── Darkness Pokémon ──
+  { id:'meg1-85',  name:'Crawdaunt',         set:'Mega Evolution', num:'85',  rarity:'Rare',         type:'Dark',      php:180  },
+  { id:'meg1-86',  name:'Mega Absol ex',     set:'Mega Evolution', num:'86',  rarity:'Double Rare',  type:'Dark',      php:1200 },
+  { id:'meg1-87',  name:'Spiritomb',         set:'Mega Evolution', num:'87',  rarity:'Rare',         type:'Psychic',   php:280  },
+  { id:'meg1-88',  name:'Yveltal',           set:'Mega Evolution', num:'88',  rarity:'Rare',         type:'Dark',      php:350  },
+  { id:'meg1-89',  name:'Nickit',            set:'Mega Evolution', num:'89',  rarity:'Common',       type:'Dark',      php:20   },
+  { id:'meg1-90',  name:'Thievul',           set:'Mega Evolution', num:'90',  rarity:'Rare',         type:'Dark',      php:160  },
+  { id:'meg1-91',  name:'Shroodle',          set:'Mega Evolution', num:'91',  rarity:'Common',       type:'Dark',      php:20   },
+  { id:'meg1-92',  name:'Grafaiai',          set:'Mega Evolution', num:'92',  rarity:'Rare',         type:'Dark',      php:180  },
+
+  // ── Metal Pokémon ──
+  { id:'meg1-93',  name:'Steelix',           set:'Mega Evolution', num:'93',  rarity:'Rare',         type:'Steel',     php:220  },
+  { id:'meg1-94',  name:'Mega Mawile ex',    set:'Mega Evolution', num:'94',  rarity:'Double Rare',  type:'Steel',     php:950  },
+  { id:'meg1-95',  name:'Dialga',            set:'Mega Evolution', num:'95',  rarity:'Rare',         type:'Steel',     php:420  },
+  { id:'meg1-96',  name:'Tinkatink',         set:'Mega Evolution', num:'96',  rarity:'Common',       type:'Steel',     php:20   },
+  { id:'meg1-97',  name:'Tinkatuff',         set:'Mega Evolution', num:'97',  rarity:'Uncommon',     type:'Steel',     php:40   },
+  { id:'meg1-98',  name:'Tinkaton',          set:'Mega Evolution', num:'98',  rarity:'Rare',         type:'Steel',     php:280  },
+  { id:'meg1-99',  name:'Gholdengo',         set:'Mega Evolution', num:'99',  rarity:'Rare',         type:'Steel',     php:380  },
+
+  // ── Dragon / Colorless Pokémon ──
+  { id:'meg1-100', name:'Mega Latias ex',    set:'Mega Evolution', num:'100', rarity:'Double Rare',  type:'Dragon',    php:1400 },
+  { id:'meg1-101', name:'Latios',            set:'Mega Evolution', num:'101', rarity:'Rare',         type:'Dragon',    php:350  },
+  { id:'meg1-102', name:'Spearow',           set:'Mega Evolution', num:'102', rarity:'Common',       type:'Colorless', php:20   },
+  { id:'meg1-103', name:'Fearow',            set:'Mega Evolution', num:'103', rarity:'Rare',         type:'Colorless', php:150  },
+  { id:'meg1-104', name:'Mega Kangaskhan ex',set:'Mega Evolution', num:'104', rarity:'Double Rare',  type:'Colorless', php:1100 },
+  { id:'meg1-105', name:'Delibird',          set:'Mega Evolution', num:'105', rarity:'Common',       type:'Water',     php:25   },
+  { id:'meg1-106', name:'Miltank',           set:'Mega Evolution', num:'106', rarity:'Common',       type:'Colorless', php:25   },
+  { id:'meg1-107', name:'Buneary',           set:'Mega Evolution', num:'107', rarity:'Common',       type:'Colorless', php:20   },
+  { id:'meg1-108', name:'Lopunny',           set:'Mega Evolution', num:'108', rarity:'Rare',         type:'Colorless', php:160  },
+  { id:'meg1-109', name:'Yungoos',           set:'Mega Evolution', num:'109', rarity:'Common',       type:'Colorless', php:20   },
+  { id:'meg1-110', name:'Gumshoos',          set:'Mega Evolution', num:'110', rarity:'Rare',         type:'Colorless', php:150  },
+  { id:'meg1-111', name:'Stufful',           set:'Mega Evolution', num:'111', rarity:'Common',       type:'Colorless', php:20   },
+  { id:'meg1-112', name:'Bewear',            set:'Mega Evolution', num:'112', rarity:'Rare',         type:'Colorless', php:180  },
+
+  // ── Trainer Cards ──
+  { id:'meg1-113', name:"Acerola's Mischief",    set:'Mega Evolution', num:'113', rarity:'Uncommon',  type:'Trainer', php:280  },
+  { id:'meg1-114', name:'Boss\u2019s Orders [Ghetsis]',set:'Mega Evolution', num:'114', rarity:'Uncommon',type:'Trainer', php:450  },
+  { id:'meg1-115', name:'Energy Switch',          set:'Mega Evolution', num:'115', rarity:'Uncommon',  type:'Trainer', php:80   },
+  { id:'meg1-116', name:'Fighting Gong',           set:'Mega Evolution', num:'116', rarity:'Uncommon',  type:'Trainer', php:200  },
+  { id:'meg1-117', name:'Forest of Vitality',      set:'Mega Evolution', num:'117', rarity:'Uncommon',  type:'Trainer', php:150  },
+  { id:'meg1-118', name:'Iron Defender',           set:'Mega Evolution', num:'118', rarity:'Uncommon',  type:'Trainer', php:120  },
+  { id:'meg1-119', name:"Lillie's Determination",  set:'Mega Evolution', num:'119', rarity:'Uncommon',  type:'Trainer', php:380  },
+  { id:'meg1-120', name:"Lt. Surge's Bargain",     set:'Mega Evolution', num:'120', rarity:'Uncommon',  type:'Trainer', php:350  },
+  { id:'meg1-121', name:'Mega Signal',             set:'Mega Evolution', num:'121', rarity:'Uncommon',  type:'Trainer', php:320  },
+  { id:'meg1-122', name:'Mystery Garden',          set:'Mega Evolution', num:'122', rarity:'Uncommon',  type:'Trainer', php:180  },
+  { id:'meg1-123', name:'Pok\u00e9mon Center Lady',set:'Mega Evolution', num:'123', rarity:'Uncommon',  type:'Trainer', php:120  },
+  { id:'meg1-124', name:'Premium Power Pro',       set:'Mega Evolution', num:'124', rarity:'Uncommon',  type:'Trainer', php:200  },
+  { id:'meg1-125', name:'Rare Candy',              set:'Mega Evolution', num:'125', rarity:'Uncommon',  type:'Trainer', php:350  },
+  { id:'meg1-126', name:'Repel',                   set:'Mega Evolution', num:'126', rarity:'Uncommon',  type:'Trainer', php:80   },
+  { id:'meg1-127', name:'Risky Ruins',             set:'Mega Evolution', num:'127', rarity:'Uncommon',  type:'Trainer', php:120  },
+  { id:'meg1-128', name:'Strange Timepiece',       set:'Mega Evolution', num:'128', rarity:'Uncommon',  type:'Trainer', php:150  },
+  { id:'meg1-129', name:'Surfing Beach',           set:'Mega Evolution', num:'129', rarity:'Uncommon',  type:'Trainer', php:180  },
+  { id:'meg1-130', name:'Switch',                  set:'Mega Evolution', num:'130', rarity:'Uncommon',  type:'Trainer', php:80   },
+  { id:'meg1-131', name:'Ultra Ball',              set:'Mega Evolution', num:'131', rarity:'Uncommon',  type:'Trainer', php:100  },
+  { id:'meg1-132', name:"Wally's Compassion",      set:'Mega Evolution', num:'132', rarity:'Uncommon',  type:'Trainer', php:650  },
+
+  // ── Illustration Rare (133–154) ──
+  { id:'meg1-133', name:'Bulbasaur IR',          set:'Mega Evolution', num:'133', rarity:'Illus. Rare', type:'Grass',     php:550  },
+  { id:'meg1-134', name:'Ivysaur IR',            set:'Mega Evolution', num:'134', rarity:'Illus. Rare', type:'Grass',     php:650  },
+  { id:'meg1-135', name:'Exeggutor IR',          set:'Mega Evolution', num:'135', rarity:'Illus. Rare', type:'Grass',     php:480  },
+  { id:'meg1-136', name:'Shuckle IR',            set:'Mega Evolution', num:'136', rarity:'Illus. Rare', type:'Grass',     php:420  },
+  { id:'meg1-137', name:'Ninjask IR',            set:'Mega Evolution', num:'137', rarity:'Illus. Rare', type:'Grass',     php:450  },
+  { id:'meg1-138', name:'Vulpix IR',             set:'Mega Evolution', num:'138', rarity:'Illus. Rare', type:'Fire',      php:580  },
+  { id:'meg1-139', name:'Litleo IR',             set:'Mega Evolution', num:'139', rarity:'Illus. Rare', type:'Fire',      php:420  },
+  { id:'meg1-140', name:'Snover IR',             set:'Mega Evolution', num:'140', rarity:'Illus. Rare', type:'Water',     php:450  },
+  { id:'meg1-141', name:'Clawitzer IR',          set:'Mega Evolution', num:'141', rarity:'Illus. Rare', type:'Water',     php:480  },
+  { id:'meg1-142', name:'Inteleon IR',           set:'Mega Evolution', num:'142', rarity:'Illus. Rare', type:'Water',     php:520  },
+  { id:'meg1-143', name:'Helioptile IR',         set:'Mega Evolution', num:'143', rarity:'Illus. Rare', type:'Electric',  php:450  },
+  { id:'meg1-144', name:'Shedinja IR',           set:'Mega Evolution', num:'144', rarity:'Illus. Rare', type:'Psychic',   php:600  },
+  { id:'meg1-145', name:'Houndstone IR',         set:'Mega Evolution', num:'145', rarity:'Illus. Rare', type:'Psychic',   php:520  },
+  { id:'meg1-146', name:'Marshadow IR',          set:'Mega Evolution', num:'146', rarity:'Illus. Rare', type:'Fighting',  php:680  },
+  { id:'meg1-147', name:'Garganacl IR',          set:'Mega Evolution', num:'147', rarity:'Illus. Rare', type:'Fighting',  php:480  },
+  { id:'meg1-148', name:'Spiritomb IR',          set:'Mega Evolution', num:'148', rarity:'Illus. Rare', type:'Psychic',   php:550  },
+  { id:'meg1-149', name:'Shroodle IR',           set:'Mega Evolution', num:'149', rarity:'Illus. Rare', type:'Dark',      php:420  },
+  { id:'meg1-150', name:'Steelix IR',            set:'Mega Evolution', num:'150', rarity:'Illus. Rare', type:'Steel',     php:500  },
+  { id:'meg1-151', name:'Spearow IR',            set:'Mega Evolution', num:'151', rarity:'Illus. Rare', type:'Colorless', php:400  },
+  { id:'meg1-152', name:'Delibird IR',           set:'Mega Evolution', num:'152', rarity:'Illus. Rare', type:'Water',     php:480  },
+  { id:'meg1-153', name:'Gumshoos IR',           set:'Mega Evolution', num:'153', rarity:'Illus. Rare', type:'Colorless', php:420  },
+  { id:'meg1-154', name:'Stufful IR',            set:'Mega Evolution', num:'154', rarity:'Illus. Rare', type:'Colorless', php:450  },
+
+  // ── Ultra Rare – Mega ex (155–164) ──
+  { id:'meg1-155', name:'Mega Venusaur ex UR',   set:'Mega Evolution', num:'155', rarity:'Ultra Rare',  type:'Grass',     php:2200 },
+  { id:'meg1-156', name:'Mega Camerupt ex UR',   set:'Mega Evolution', num:'156', rarity:'Ultra Rare',  type:'Fire',      php:1800 },
+  { id:'meg1-157', name:'Mega Abomasnow ex UR',  set:'Mega Evolution', num:'157', rarity:'Ultra Rare',  type:'Water',     php:1900 },
+  { id:'meg1-158', name:'Mega Manectric ex UR',  set:'Mega Evolution', num:'158', rarity:'Ultra Rare',  type:'Electric',  php:2000 },
+  { id:'meg1-159', name:'Mega Gardevoir ex UR',  set:'Mega Evolution', num:'159', rarity:'Ultra Rare',  type:'Psychic',   php:4500 },
+  { id:'meg1-160', name:'Mega Lucario ex UR',    set:'Mega Evolution', num:'160', rarity:'Ultra Rare',  type:'Fighting',  php:3800 },
+  { id:'meg1-161', name:'Mega Absol ex UR',      set:'Mega Evolution', num:'161', rarity:'Ultra Rare',  type:'Dark',      php:2500 },
+  { id:'meg1-162', name:'Mega Mawile ex UR',     set:'Mega Evolution', num:'162', rarity:'Ultra Rare',  type:'Steel',     php:2200 },
+  { id:'meg1-163', name:'Mega Latias ex UR',     set:'Mega Evolution', num:'163', rarity:'Ultra Rare',  type:'Dragon',    php:3000 },
+  { id:'meg1-164', name:'Mega Kangaskhan ex UR', set:'Mega Evolution', num:'164', rarity:'Ultra Rare',  type:'Colorless', php:2400 },
+
+  // ── Trainer Ultra Rare (165–176) ──
+  { id:'meg1-165', name:"Acerola's Mischief UR",    set:'Mega Evolution', num:'165', rarity:'Ultra Rare', type:'Trainer', php:1800 },
+  { id:'meg1-166', name:'Air Balloon UR',             set:'Mega Evolution', num:'166', rarity:'Ultra Rare', type:'Trainer', php:900  },
+  { id:'meg1-167', name:'Buddy-Buddy Poffin UR',      set:'Mega Evolution', num:'167', rarity:'Ultra Rare', type:'Trainer', php:1200 },
+  { id:'meg1-168', name:'Fighting Gong UR',           set:'Mega Evolution', num:'168', rarity:'Ultra Rare', type:'Trainer', php:1000 },
+  { id:'meg1-169', name:"Lillie's Determination UR",  set:'Mega Evolution', num:'169', rarity:'Ultra Rare', type:'Trainer', php:1600 },
+  { id:'meg1-170', name:"Lt. Surge's Bargain UR",     set:'Mega Evolution', num:'170', rarity:'Ultra Rare', type:'Trainer', php:1500 },
+  { id:'meg1-171', name:'Mega Signal UR',             set:'Mega Evolution', num:'171', rarity:'Ultra Rare', type:'Trainer', php:1400 },
+  { id:'meg1-172', name:'Mystery Garden UR',          set:'Mega Evolution', num:'172', rarity:'Ultra Rare', type:'Trainer', php:900  },
+  { id:'meg1-173', name:'Night Stretcher UR',         set:'Mega Evolution', num:'173', rarity:'Ultra Rare', type:'Trainer', php:1100 },
+  { id:'meg1-174', name:'Premium Power Pro UR',       set:'Mega Evolution', num:'174', rarity:'Ultra Rare', type:'Trainer', php:1000 },
+  { id:'meg1-175', name:'Rare Candy UR',              set:'Mega Evolution', num:'175', rarity:'Ultra Rare', type:'Trainer', php:1800 },
+  { id:'meg1-176', name:"Wally's Compassion UR",      set:'Mega Evolution', num:'176', rarity:'Ultra Rare', type:'Trainer', php:2800 },
+
+  // ── Special Illustration Rare (177–186) ──
+  { id:'meg1-177', name:'Mega Venusaur ex SIR',   set:'Mega Evolution', num:'177', rarity:'Special Art', type:'Grass',     php:6500  },
+  { id:'meg1-178', name:'Mega Gardevoir ex SIR',  set:'Mega Evolution', num:'178', rarity:'Special Art', type:'Psychic',   php:12000 },
+  { id:'meg1-179', name:'Mega Lucario ex SIR',    set:'Mega Evolution', num:'179', rarity:'Special Art', type:'Fighting',  php:9500  },
+  { id:'meg1-180', name:'Mega Absol ex SIR',      set:'Mega Evolution', num:'180', rarity:'Special Art', type:'Dark',      php:7200  },
+  { id:'meg1-181', name:'Mega Latias ex SIR',     set:'Mega Evolution', num:'181', rarity:'Special Art', type:'Dragon',    php:8000  },
+  { id:'meg1-182', name:'Mega Kangaskhan ex SIR', set:'Mega Evolution', num:'182', rarity:'Special Art', type:'Colorless', php:6800  },
+  { id:'meg1-183', name:"Acerola's Mischief SIR",    set:'Mega Evolution', num:'183', rarity:'Special Art', type:'Trainer', php:5500  },
+  { id:'meg1-184', name:"Lillie's Determination SIR", set:'Mega Evolution', num:'184', rarity:'Special Art', type:'Trainer', php:5000  },
+  { id:'meg1-185', name:"Lt. Surge's Bargain SIR",    set:'Mega Evolution', num:'185', rarity:'Special Art', type:'Trainer', php:4800  },
+  { id:'meg1-186', name:"Wally's Compassion SIR",     set:'Mega Evolution', num:'186', rarity:'Special Art', type:'Trainer', php:5200  },
+
+  // ── Hyper Rare (187–188) ──
+  { id:'meg1-187', name:'Mega Gardevoir ex HR',   set:'Mega Evolution', num:'187', rarity:'Hyper Rare',  type:'Psychic',   php:22000 },
+  { id:'meg1-188', name:'Mega Lucario ex HR',     set:'Mega Evolution', num:'188', rarity:'Hyper Rare',  type:'Fighting',  php:18000 },
+];
+
+/* ── Rarity → CSS class ── */
+const RARITY_CLASS = {
+  'Common':      'r-common',
+  'Uncommon':    'r-uncommon',
+  'Rare':        'r-rare',
+  'Holo Rare':   'r-holo',
+  'Ultra Rare':  'r-ultra',
+  'Double Rare': 'r-ultra',
+  'Secret Rare': 'r-secret',
+  'EX Ultra':    'r-ex',
+  'Special Art':  'r-secret',
+  'Mega EX':      'r-mega',
+  'Illus. Rare':  'r-holo',
+  'Hyper Rare':   'r-secret',
+};
+
+/* ── Type → CSS class ── */
+const TYPE_CLASS = {
+  Fire:'t-fire', Water:'t-water', Grass:'t-grass', Electric:'t-electric',
+  Psychic:'t-psychic', Dark:'t-dark', Dragon:'t-dragon', Fighting:'t-fighting',
+  Steel:'t-steel', Colorless:'t-colorless', Fairy:'t-fairy', Normal:'t-normal',
+  Trainer:'t-trainer',
+};
+
+/* ── Type emoji ── */
+const TYPE_EMO = {
+  Fire:'🔥', Water:'💧', Grass:'🌿', Electric:'⚡', Psychic:'🔮',
+  Dark:'🌑', Dragon:'🐉', Fighting:'🥊', Steel:'⚙️', Colorless:'⭐',
+  Fairy:'🌸', Normal:'⚪', Trainer:'🃏',
+};
+
+/* ════════════════════════════════════
+   STATE
+════════════════════════════════════ */
+let owned = {};
+let currentPage = 0;
+let currentFilter = 'all';
+const CARDS_PER_PAGE = 4;
+
+/* load from localStorage */
+function loadOwned() {
+  try { owned = JSON.parse(localStorage.getItem('poke_owned') || '{}'); }
+  catch(e) { owned = {}; }
+}
+function saveOwned() {
+  localStorage.setItem('poke_owned', JSON.stringify(owned));
+}
+
+/* ════════════════════════════════════
+   FILTER HELPERS
+════════════════════════════════════ */
+function setFilter(f, btn) {
+  currentFilter = f;
+  currentPage = 0;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function getFiltered() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const setF = document.getElementById('set-filter').value;
+  const typeF = document.getElementById('type-filter').value;
+  const sortV = document.getElementById('sort').value;
+
+  let cards = ALL_CARDS.filter(c => {
+    const isOwned = !!owned[c.id];
+    if (currentFilter === 'owned'     && !isOwned) return false;
+    if (currentFilter === 'not-owned' &&  isOwned) return false;
+    if (q && !c.name.toLowerCase().includes(q) && !c.set.toLowerCase().includes(q)) return false;
+    if (setF  && c.set  !== setF)  return false;
+    if (typeF && c.type !== typeF) return false;
+    return true;
+  });
+
+  if (sortV === 'name')     cards.sort((a,b)=>a.name.localeCompare(b.name));
+  if (sortV === 'value-hi') cards.sort((a,b)=>b.php - a.php);
+  if (sortV === 'value-lo') cards.sort((a,b)=>a.php - b.php);
+  if (sortV === 'set')      cards.sort((a,b)=>a.set.localeCompare(b.set));
+
+  return cards;
+}
+
+/* ════════════════════════════════════
+   TOGGLE OWNED
+════════════════════════════════════ */
+function toggleOwned(id) {
+  owned[id] = !owned[id];
+  if (!owned[id]) delete owned[id];
+  saveOwned();
+  render();
+}
+
+/* ════════════════════════════════════
+   IMAGE URL
+════════════════════════════════════ */
+function imgUrl(card) {
+  const setMap = {
+    'Base Set':'base1','Jungle':'jungle','Fossil':'fossil',
+    'Neo Genesis':'neo1','XY':'xy1','Sun & Moon':'sm1',
+    'Sword & Shield':'swsh1','Scarlet & Violet':'sv1',
+    'Paldea Evolved':'sv2','Pokémon 151':'mew',
+    'Temporal Forces':'tef',
+    'Mega Evolution':'meg1',
+  };
+  const sid = setMap[card.set] || card.id.split('-')[0];
+  const num = card.num;
+  return `https://images.pokemontcg.io/${sid}/${num}.png`;
+}
+
+/* ════════════════════════════════════
+   CARD HTML
+════════════════════════════════════ */
+function cardFacePlaceholder(card, isOwned) {
+  const t      = (card.type || 'colorless').toLowerCase();
+  const emo    = TYPE_EMO[card.type] || '⭐';
+  const hpMap  = { 'Common':60,'Uncommon':80,'Rare':110,'Holo Rare':120,'Double Rare':240,
+                   'Ultra Rare':270,'Secret Rare':300,'Mega EX':300,'EX Ultra':250,
+                   'Illus. Rare':240,'Special Art':270,'Hyper Rare':330,'Trainer':null };
+  const hp     = hpMap[card.rarity];
+  const hpStr  = hp ? `<span class="pf-hp">${hp} HP</span>` : '';
+  return `
+  <div class="card-face-placeholder">
+    <div class="pf-header pfh-${t}">
+      <span class="pf-header-name">${card.name}</span>
+      ${hpStr}
+    </div>
+    <div class="pf-art">
+      <div class="pf-art-bg pfbg-${t}"></div>
+      <span class="pf-emo">${emo}</span>
+    </div>
+    <div class="pf-footer">
+      <span class="pf-set">${card.set}</span>
+      <span class="pf-num">#${card.num}</span>
+    </div>
+  </div>`;
+}
+
+function cardHTML(card) {
+  const isOwned = !!owned[card.id];
+  const slotClass = isOwned ? 'owned' : 'not-owned';
+  const badgeClass = isOwned ? 'yes' : 'no';
+  const badgeIcon  = isOwned ? '✓' : '+';
+  const rarClass   = RARITY_CLASS[card.rarity] || 'r-common';
+  const typeClass  = TYPE_CLASS[card.type] || 't-colorless';
+  const typeEmo    = TYPE_EMO[card.type]   || '⭐';
+  const phpFmt     = '₱' + card.php.toLocaleString('en-PH');
+  const url        = imgUrl(card);
+
+  return `
+  <div class="card-slot ${slotClass} tooltip" onclick="toggleOwned('${card.id}')" title="Click to toggle owned">
+    <div class="tooltip-box">${isOwned ? 'Mark as missing' : 'Mark as owned'}</div>
+    <div class="card-frame">
+      <div class="card-inner">
+        <div class="card-img-wrap" style="position:relative">
+          <img src="${url}"
+               alt="${card.name}"
+               loading="lazy"
+               onerror="this.classList.add('hidden');this.nextElementSibling.style.display='flex';"
+               style="display:block"
+          />
+          <div style="display:none;position:absolute;inset:0">
+            ${cardFacePlaceholder(card, isOwned)}
+          </div>
+          <div class="own-badge ${badgeClass}" style="position:absolute;top:6px;right:6px">${badgeIcon}</div>
+        </div>
+        <div class="p-2">
+          <div class="text-white font-black text-xs leading-tight truncate">${card.name}</div>
+          <div class="text-slate-400 text-[10px] truncate">${card.set} #${card.num}</div>
+          <div class="flex items-center justify-between mt-1 flex-wrap gap-1">
+            <span class="rarity-badge ${rarClass}">${card.rarity}</span>
+            <span class="text-[10px] font-bold text-green-400">${phpFmt}</span>
+          </div>
+          <div class="mt-1">
+            <span class="text-[10px] px-2 py-0.5 rounded-full ${typeClass}">${typeEmo} ${card.type}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ════════════════════════════════════
+   PAGE DOTS
+════════════════════════════════════ */
+function buildDots(total, cur) {
+  const dots = document.getElementById('page-dots');
+  dots.innerHTML = '';
+  const max = Math.min(total, 7);
+  for (let i = 0; i < max; i++) {
+    const d = document.createElement('div');
+    d.className = `w-2 h-2 rounded-full transition-all cursor-pointer ${i === cur ? 'bg-yellow-400 scale-125' : 'bg-slate-600 hover:bg-slate-400'}`;
+    const pg = i;
+    d.onclick = () => { currentPage = pg; render(); };
+    dots.appendChild(d);
+  }
+  if (total > 7) {
+    const sp = document.createElement('span');
+    sp.className = 'text-slate-500 text-xs';
+    sp.textContent = `…${total}`;
+    dots.appendChild(sp);
+  }
+}
+
+/* ════════════════════════════════════
+   MAIN RENDER
+════════════════════════════════════ */
+function render() {
+  const filtered = getFiltered();
+  const totalPages = Math.max(1, Math.ceil(filtered.length / CARDS_PER_PAGE));
+  if (currentPage >= totalPages) currentPage = totalPages - 1;
+
+  const start = currentPage * CARDS_PER_PAGE;
+  const page  = filtered.slice(start, start + CARDS_PER_PAGE);
+
+  const grid  = document.getElementById('card-grid');
+  const empty = document.getElementById('empty-state');
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
+  } else {
+    empty.classList.add('hidden');
+    grid.innerHTML = page.map(cardHTML).join('');
+  }
+
+  /* Page info */
+  document.getElementById('page-info').textContent     = `Page ${currentPage+1} / ${totalPages}`;
+  document.getElementById('showing-info').textContent  = `${filtered.length} card${filtered.length!==1?'s':''} found`;
+
+  /* Nav buttons */
+  document.getElementById('btn-prev').disabled = currentPage === 0;
+  document.getElementById('btn-next').disabled = currentPage >= totalPages - 1;
+
+  /* Dots */
+  buildDots(totalPages, currentPage);
+
+  /* Stats (always based on ALL_CARDS) */
+  const ownedCount = ALL_CARDS.filter(c => owned[c.id]).length;
+  const totalCount = ALL_CARDS.length;
+  const totalValue = ALL_CARDS.filter(c => owned[c.id]).reduce((s,c) => s+c.php, 0);
+  const pct        = totalCount ? Math.round(ownedCount / totalCount * 100) : 0;
+
+  const baseCount   = ALL_CARDS.filter(c => parseInt(c.num) <= 132).length;
+  const secretCount  = ALL_CARDS.filter(c => parseInt(c.num) > 132).length;
+  document.getElementById('stat-owned').textContent = ownedCount;
+  document.getElementById('stat-total').textContent = totalCount;
+  document.getElementById('stat-value').textContent = '₱' + totalValue.toLocaleString('en-PH');
+  document.getElementById('stat-pct').textContent   = pct + '%';
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+/* ════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════ */
+function prevPage() { if (currentPage > 0) { currentPage--; render(); } }
+function nextPage() {
+  const filtered   = getFiltered();
+  const totalPages = Math.ceil(filtered.length / CARDS_PER_PAGE);
+  if (currentPage < totalPages - 1) { currentPage++; render(); }
+}
+
+/* keyboard arrow nav */
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft')  prevPage();
+  if (e.key === 'ArrowRight') nextPage();
+});
+
+/* ════════════════════════════════════
+   POPULATE FILTER DROPDOWNS
+════════════════════════════════════ */
+function buildDropdowns() {
+  const sets  = [...new Set(ALL_CARDS.map(c=>c.set))];
+  const types = [...new Set(ALL_CARDS.map(c=>c.type))].sort();
+
+  const setEl  = document.getElementById('set-filter');
+  const typeEl = document.getElementById('type-filter');
+
+  sets.forEach(s  => { const o=document.createElement('option'); o.value=s; o.textContent=s; setEl.appendChild(o);  });
+  types.forEach(t => { const o=document.createElement('option'); o.value=t; o.textContent=t; typeEl.appendChild(o); });
+}
+
+/* ════════════════════════════════════
+   INIT
+════════════════════════════════════ */
+loadOwned();
+buildDropdowns();
+render();
+</script>
+</body>
+</html>
