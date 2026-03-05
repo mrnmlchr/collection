@@ -263,6 +263,32 @@
       from { opacity: 0; transform: translateY(24px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+
+    /* ── History ── */
+    .hist-empty {
+      text-align: center;
+      color: rgba(255,255,255,0.2);
+      font-size: 12px;
+      padding: 24px 0 8px;
+    }
+    .hist-row {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      transition: background 0.15s;
+    }
+    .hist-row:hover { background: rgba(255,255,255,0.07); }
+    .hist-emo  { font-size: 22px; flex-shrink: 0; }
+    .hist-name { font-size: 13px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hist-meta { font-size: 11px; color: rgba(255,255,255,0.38); margin-top: 2px; }
+    .hist-rbadge { display: inline-block; font-size: 9px; padding: 1px 7px; border-radius: 999px; font-weight: 700; margin-left: 4px; vertical-align: middle; }
+    .hist-src  { font-size: 16px; flex-shrink: 0; }
+    .hist-time { font-size: 10px; color: rgba(255,255,255,0.22); flex-shrink: 0; text-align: right; }
   </style>
 </head>
 <body>
@@ -363,6 +389,11 @@
       </div>
 
     </div>
+
+    <!-- ── Recent Activity ── -->
+    <div class="section-label" style="margin-top:44px">· Recently Added ·</div>
+    <div id="history-list"></div>
+
   </div>
 
   <script>
@@ -393,6 +424,52 @@
       document.getElementById('g-total').textContent = totalCards;
       document.getElementById('g-owned').textContent = totalOwned;
       document.getElementById('g-pct').textContent   = globalPct + '%';
+
+      // ── History ──
+      const TYPE_EMO = {
+        Fire:'🔥', Water:'💧', Grass:'🌿', Electric:'⚡', Psychic:'🔮',
+        Dark:'🌑', Dragon:'🐉', Fighting:'🥊', Steel:'⚙️', Colorless:'⭐',
+        Fairy:'🌸', Normal:'⚪', Trainer:'🃏',
+      };
+      const RAR_STYLE = {
+        'Common':     'background:#3f3f46;color:#a1a1aa',
+        'Uncommon':   'background:#064e3b;color:#6ee7b7',
+        'Rare':       'background:#1e3a8a;color:#93c5fd',
+        'Double Rare':'background:#78350f;color:#fcd34d',
+        'Illus. Rare':'background:#4a044e;color:#e879f9',
+        'Ultra Rare': 'background:#7c2d12;color:#fb923c',
+        'Special Art':'background:#7f1d1d;color:#fca5a5',
+        'Hyper Rare': 'background:#1e1b4b;color:#a5b4fc',
+      };
+      function timeAgo(ts) {
+        const s = Math.floor((Date.now() - ts) / 1000);
+        if (s <  60)  return 'just now';
+        if (s < 3600) return Math.floor(s/60)  + 'm ago';
+        if (s < 86400)return Math.floor(s/3600) + 'h ago';
+        return Math.floor(s/86400) + 'd ago';
+      }
+      let hist = [];
+      try { hist = JSON.parse(localStorage.getItem('poke_history') || '[]'); } catch(e) {}
+      const histEl = document.getElementById('history-list');
+      if (!hist.length) {
+        histEl.innerHTML = '<div class="hist-empty">No cards added yet — open a binder or use AR Finder!</div>';
+      } else {
+        histEl.innerHTML = hist.slice(0, 12).map(h => {
+          const emo  = TYPE_EMO[h.type] || '⭐';
+          const rstyle = RAR_STYLE[h.rarity] || 'background:#3f3f46;color:#a1a1aa';
+          const srcIcon = h.src === 'ar' ? '📷' : '📖';
+          const phpStr  = h.php ? ' · ₱' + h.php.toLocaleString('en-PH') : '';
+          return `<div class="hist-row">
+            <span class="hist-emo">${emo}</span>
+            <div style="flex:1;min-width:0">
+              <div class="hist-name">${h.name}</div>
+              <div class="hist-meta">${h.set}<span class="hist-rbadge" style="${rstyle}">${h.rarity}</span>${phpStr}</div>
+            </div>
+            <span class="hist-src" title="${h.src === 'ar' ? 'AR Finder' : 'Binder'}">${srcIcon}</span>
+            <span class="hist-time">${timeAgo(h.ts)}</span>
+          </div>`;
+        }).join('');
+      }
     })();
   </script>
 </body>

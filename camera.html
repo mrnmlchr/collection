@@ -663,6 +663,11 @@ function showCatch() {
   if (cardId) {
     owned[cardId] = true;
     saveOwned();
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem('poke_history') || '[]'); } catch(e) {}
+    hist.unshift({ id: cardId, name: p.name, set: 'Mega Evolution', rarity: p.rarity, type: p.type, ts: Date.now(), src: 'ar' });
+    if (hist.length > 30) hist = hist.slice(0, 30);
+    localStorage.setItem('poke_history', JSON.stringify(hist));
   }
 
   sessionN++;

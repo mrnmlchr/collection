@@ -335,6 +335,23 @@
     /* ── Empty state ── */
     .empty-state { text-align: center; padding: 60px 20px; color: #555; }
 
+    /* ── History ── */
+    .hist-row {
+      display: flex; align-items: center; gap: 13px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 11px 15px; margin-bottom: 8px;
+      transition: background 0.15s;
+    }
+    .hist-row:hover { background: rgba(255,255,255,0.07); }
+    .hist-emo  { font-size: 20px; flex-shrink:0; }
+    .hist-name { font-size: 13px; font-weight:800; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .hist-meta { font-size: 11px; color: rgba(255,255,255,0.35); margin-top:2px; }
+    .hist-rbadge { display:inline-block; font-size:8px; padding:1px 7px; border-radius:999px; font-weight:700; margin-left:4px; vertical-align:middle; }
+    .hist-src  { font-size:15px; flex-shrink:0; }
+    .hist-time { font-size:10px; color:rgba(255,255,255,0.2); flex-shrink:0; text-align:right; white-space:nowrap; }
+    .hist-empty { text-align:center; color:rgba(255,255,255,0.18); font-size:12px; padding:20px 0 8px; }
+
     /* ── Tooltip ── */
     .tooltip { position: relative; }
     .tooltip:hover .tooltip-box { opacity: 1; pointer-events: auto; }
@@ -490,6 +507,12 @@
       <span class="flex items-center gap-1"><span class="w-4 h-4 rounded-full bg-yellow-400/80 inline-block"></span> Owned</span>
       <span class="flex items-center gap-1"><span class="w-4 h-4 rounded-full border border-slate-600 inline-block"></span> Missing</span>
       <span class="flex items-center gap-1">💡 Click card to toggle owned</span>
+    </div>
+
+    <!-- ── RECENT HISTORY ── -->
+    <div class="mt-10">
+      <div class="press text-yellow-400 text-center mb-4" style="font-size:9px;letter-spacing:2px;opacity:0.7">· RECENTLY ADDED ·</div>
+      <div id="binder-history-list"></div>
     </div>
 
     <footer class="text-center text-slate-700 text-xs mt-8">
@@ -811,9 +834,21 @@ function getFiltered() {
 ════════════════════════════════════ */
 function toggleOwned(id) {
   owned[id] = !owned[id];
-  if (!owned[id]) delete owned[id];
+  if (!owned[id]) {
+    delete owned[id];
+  } else {
+    const card = ALL_CARDS.find(c => c.id === id);
+    if (card) {
+      let hist = [];
+      try { hist = JSON.parse(localStorage.getItem('poke_history') || '[]'); } catch(e) {}
+      hist.unshift({ id: card.id, name: card.name, set: card.set, rarity: card.rarity, type: card.type, php: card.php, ts: Date.now(), src: 'binder' });
+      if (hist.length > 30) hist = hist.slice(0, 30);
+      localStorage.setItem('poke_history', JSON.stringify(hist));
+    }
+  }
   saveOwned();
   render();
+  renderHistory();
 }
 
 /* ════════════════════════════════════
@@ -1011,6 +1046,59 @@ function buildDropdowns() {
 loadOwned();
 buildDropdowns();
 render();
+
+/* ════════════════════════════════════
+   HISTORY
+════════════════════════════════════ */
+function renderHistory() {
+  const TYPE_EMO_H = {
+    Fire:'🔥', Water:'💧', Grass:'🌿', Electric:'⚡', Psychic:'🔮',
+    Dark:'🌑', Dragon:'🐉', Fighting:'🥊', Steel:'⚙️', Colorless:'⭐',
+    Fairy:'🌸', Normal:'⚪', Trainer:'🃏',
+  };
+  const RAR_STYLE = {
+    'Common':     'background:#3f3f46;color:#a1a1aa',
+    'Uncommon':   'background:#064e3b;color:#6ee7b7',
+    'Rare':       'background:#1e3a8a;color:#93c5fd',
+    'Double Rare':'background:#78350f;color:#fcd34d',
+    'Illus. Rare':'background:#4a044e;color:#e879f9',
+    'Ultra Rare': 'background:#7c2d12;color:#fb923c',
+    'Special Art':'background:#7f1d1d;color:#fca5a5',
+    'Hyper Rare': 'background:#1e1b4b;color:#a5b4fc',
+  };
+  function timeAgo(ts) {
+    const s = Math.floor((Date.now() - ts) / 1000);
+    if (s <  60)   return 'just now';
+    if (s < 3600)  return Math.floor(s/60)   + 'm ago';
+    if (s < 86400) return Math.floor(s/3600) + 'h ago';
+    return Math.floor(s/86400) + 'd ago';
+  }
+  let hist = [];
+  try { hist = JSON.parse(localStorage.getItem('poke_history') || '[]'); } catch(e) {}
+  // only show entries from this set
+  const setHist = hist.filter(h => h.set === 'Mega Evolution').slice(0, 10);
+  const el = document.getElementById('binder-history-list');
+  if (!setHist.length) {
+    el.innerHTML = '<div class="hist-empty">No cards added yet — click a card to mark it owned!</div>';
+    return;
+  }
+  el.innerHTML = setHist.map(h => {
+    const emo      = TYPE_EMO_H[h.type] || '⭐';
+    const rstyle   = RAR_STYLE[h.rarity] || 'background:#3f3f46;color:#a1a1aa';
+    const srcIcon  = h.src === 'ar' ? '📷' : '📖';
+    const phpStr   = h.php ? ' · ₱' + h.php.toLocaleString('en-PH') : '';
+    return `<div class="hist-row">
+      <span class="hist-emo">${emo}</span>
+      <div style="flex:1;min-width:0">
+        <div class="hist-name">${h.name}</div>
+        <div class="hist-meta">${h.set}<span class="hist-rbadge" style="${rstyle}">${h.rarity}</span>${phpStr}</div>
+      </div>
+      <span class="hist-src" title="${h.src === 'ar' ? 'AR Finder' : 'Binder'}">${srcIcon}</span>
+      <span class="hist-time">${timeAgo(h.ts)}</span>
+    </div>`;
+  }).join('');
+}
+renderHistory();
 </script>
 </body>
 </html>
