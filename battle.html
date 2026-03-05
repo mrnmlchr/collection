@@ -265,6 +265,251 @@
       80%     { transform: translateX(5px); }
     }
     .shake { animation: shake 0.4s ease; }
+
+    /* EXP bar in HUD */
+    .exp-bar-bg { background: rgba(255,255,255,0.1); border-radius: 99px; height: 5px; overflow: hidden; margin-top: 4px; }
+    .exp-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #a78bfa, #818cf8); transition: width 0.6s ease; }
+    .hud-exp-label { font-size: 7px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+    /* EXP bar in picker */
+    .pick-level { font-size: 8px; color: #a78bfa; margin-top: 2px; font-weight: 700; }
+    .pick-exp-bg { background: rgba(255,255,255,0.08); border-radius: 99px; height: 4px; overflow: hidden; margin-top: 4px; }
+    .pick-exp-fill { height: 100%; border-radius: 99px; background: #a78bfa; }
+
+    /* ════════ LEVEL-UP OVERLAY ════════ */
+    #levelup-overlay {
+      display: none; position: fixed; inset: 0; z-index: 70;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(6px);
+      align-items: center; justify-content: center;
+    }
+    #levelup-overlay.show { display: flex; }
+    .levelup-card {
+      background: linear-gradient(135deg, #1a1a35, #252545);
+      border: 2px solid #a78bfa;
+      border-radius: 26px; padding: 32px 24px; text-align: center;
+      max-width: 340px; width: 90%;
+      animation: pop-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .levelup-icon { font-size: 48px; margin-bottom: 10px; }
+    .levelup-title { font-family: 'Press Start 2P', monospace; font-size: 11px; color: #a78bfa; margin-bottom: 6px; line-height: 1.6; }
+    .levelup-sub { font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 20px; line-height: 1.7; }
+    .levelup-ok { width: 100%; padding: 13px; border-radius: 12px;
+      font-family: 'Press Start 2P', monospace; font-size: 9px;
+      background: linear-gradient(135deg, #a78bfa, #818cf8); color: #000;
+      border: none; cursor: pointer; }
+
+    /* ════════ LEARN MOVE OVERLAY ════════ */
+    #learnmove-overlay {
+      display: none; position: fixed; inset: 0; z-index: 80;
+      background: rgba(0,0,0,0.88); backdrop-filter: blur(8px);
+      align-items: center; justify-content: center;
+    }
+    #learnmove-overlay.show { display: flex; }
+    .learnmove-card {
+      background: linear-gradient(135deg, #1a1a35, #252545);
+      border: 2px solid #FFD700;
+      border-radius: 26px; padding: 28px 22px; text-align: center;
+      max-width: 360px; width: 92%;
+      animation: pop-in 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .learnmove-title { font-family: 'Press Start 2P', monospace; font-size: 10px; color: #FFD700; margin-bottom: 6px; }
+    .learnmove-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 18px; line-height: 1.6; }
+    .learnmove-new {
+      background: rgba(255,215,0,0.1); border: 2px solid #FFD70088;
+      border-radius: 12px; padding: 12px; margin-bottom: 16px;
+    }
+    .learnmove-new-name { font-size: 11px; font-weight: 900; color: #FFD700; }
+    .learnmove-new-meta { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 3px; }
+    .learnmove-slots { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .learnmove-slot {
+      background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.15);
+      border-radius: 10px; padding: 10px 14px; cursor: pointer; text-align: left;
+      display: flex; justify-content: space-between; align-items: center;
+      transition: all 0.15s;
+    }
+    .learnmove-slot:hover { border-color: #f87171; background: rgba(248,113,113,0.1); }
+    .learnmove-slot-name { font-size: 10px; font-weight: 800; color: #fff; }
+    .learnmove-slot-meta { font-size: 9px; color: rgba(255,255,255,0.35); }
+    .learnmove-skip {
+      width: 100%; padding: 11px; border-radius: 10px;
+      font-family: 'Press Start 2P', monospace; font-size: 8px;
+      background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4);
+      border: 2px solid rgba(255,255,255,0.1); cursor: pointer;
+    }
+
+    /* ════════════════════════════════════
+       TOURNAMENT STYLES
+    ════════════════════════════════════ */
+    .tournament-btn {
+      display: block; width: 100%; margin-top: 10px;
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      color: #fff; font-family: 'Press Start 2P', monospace; font-size: 10px;
+      padding: 14px; border-radius: 14px; border: none; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(124,58,237,0.35); transition: opacity 0.2s;
+    }
+    .tournament-btn:hover { opacity: 0.85; }
+
+    /* Team Picker */
+    #team-picker-screen { display: none; }
+    .pick-card { position: relative; }
+    .pick-card.team-selected {
+      border-color: #a78bfa; background: rgba(167,139,250,0.15);
+      box-shadow: 0 0 14px rgba(167,139,250,0.3);
+    }
+    .team-order-badge {
+      position: absolute; top: -8px; right: -8px;
+      background: #a78bfa; color: #1a1a35;
+      font-size: 8px; font-family: 'Press Start 2P', monospace;
+      width: 18px; height: 18px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .team-selection-bar {
+      display: flex; gap: 6px; justify-content: space-between;
+      padding: 10px 12px; margin-bottom: 14px;
+      background: rgba(0,0,0,0.35); border-radius: 14px;
+      border: 2px solid rgba(255,255,255,0.08);
+    }
+    .team-slot {
+      flex: 1; height: 44px; border-radius: 10px; max-width: 56px;
+      background: rgba(255,255,255,0.04); border: 2px dashed rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+      transition: all 0.2s;
+    }
+    .team-slot.filled { border: 2px solid #a78bfa; background: rgba(167,139,250,0.1); }
+    .start-tournament-btn {
+      display: block; width: 100%; margin-top: 14px;
+      background: linear-gradient(135deg, #a78bfa, #6d28d9);
+      color: #fff; font-family: 'Press Start 2P', monospace; font-size: 10px;
+      padding: 15px; border-radius: 14px; border: none; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(167,139,250,0.35); transition: opacity 0.2s;
+    }
+    .start-tournament-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .back-to-single {
+      display: block; width: 100%; margin-top: 8px;
+      background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.35);
+      font-family: 'Press Start 2P', monospace; font-size: 8px;
+      padding: 11px; border-radius: 12px;
+      border: 2px solid rgba(255,255,255,0.08); cursor: pointer;
+    }
+
+    /* Team balls in battle */
+    .team-status-row {
+      display: none; justify-content: space-between; align-items: center;
+      padding: 8px 14px; margin-bottom: 8px;
+      background: rgba(0,0,0,0.45); border-radius: 12px;
+      border: 1.5px solid rgba(255,255,255,0.08);
+    }
+    .team-balls-wrap { display: flex; flex-direction: column; gap: 3px; }
+    .team-label-sm { font-size: 7px; color: rgba(255,255,255,0.3); font-family: 'Press Start 2P', monospace; }
+    .team-balls { display: flex; gap: 5px; }
+    .t-ball {
+      width: 11px; height: 11px; border-radius: 50%;
+      background: #4ade80; border: 1.5px solid rgba(0,0,0,0.5); transition: all 0.3s;
+    }
+    .t-ball.fainted { background: #374151; border-color: #1f2937; }
+    .t-ball.active  { background: #FFD700; box-shadow: 0 0 5px #FFD700aa; }
+    .tourn-round-display {
+      font-size: 7px; font-family: 'Press Start 2P', monospace;
+      color: #FFD700; text-align: center; line-height: 1.6;
+    }
+
+    /* ── Round Intro Overlay ── */
+    #round-intro-overlay {
+      display: none; position: fixed; inset: 0; z-index: 54;
+      background: rgba(0,0,0,0.92); backdrop-filter: blur(8px);
+      align-items: center; justify-content: center;
+    }
+    #round-intro-overlay.show { display: flex; }
+    .round-intro-card {
+      background: linear-gradient(135deg, #12103a, #1e1c4a);
+      border: 2px solid #FFD700; border-radius: 26px;
+      padding: 28px 22px; text-align: center;
+      max-width: 360px; width: 92%;
+      animation: pop-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .ri-round-badge {
+      display: inline-block; font-family: 'Press Start 2P', monospace; font-size: 8px;
+      color: #FFD700; background: rgba(255,215,0,0.12); border: 1px solid #FFD70040;
+      border-radius: 999px; padding: 5px 14px; margin-bottom: 14px;
+    }
+    .ri-trainer-emo { font-size: 56px; margin-bottom: 4px; }
+    .ri-vs { font-size: 10px; color: rgba(255,255,255,0.25); margin-bottom: 4px; }
+    .ri-trainer-name { font-family: 'Press Start 2P', monospace; font-size: 11px; color: #fff; margin-bottom: 16px; }
+    .ri-team-label { font-size: 9px; color: rgba(255,255,255,0.3); margin-bottom: 8px; }
+    .ri-team-row { display: flex; gap: 5px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap; }
+    .ri-chip {
+      background: rgba(255,255,255,0.07); border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 8px; padding: 6px 8px; font-size: 15px; line-height: 1;
+    }
+    .ri-divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 14px 0; }
+    .ri-battle-btn {
+      width: 100%; padding: 14px; font-family: 'Press Start 2P', monospace; font-size: 10px;
+      background: linear-gradient(135deg, #FFD700, #f97316); color: #000;
+      border: none; border-radius: 14px; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(255,215,0,0.35);
+    }
+
+    /* ── Switch Pokémon Overlay ── */
+    #switch-overlay {
+      display: none; position: fixed; inset: 0; z-index: 64;
+      background: rgba(0,0,0,0.88); backdrop-filter: blur(8px);
+      align-items: center; justify-content: center;
+    }
+    #switch-overlay.show { display: flex; }
+    .switch-card {
+      background: linear-gradient(135deg, #1a1a35, #252545);
+      border: 2px solid #f87171; border-radius: 24px;
+      padding: 26px 20px; max-width: 360px; width: 92%; text-align: center;
+      animation: pop-in 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .switch-title { font-family: 'Press Start 2P', monospace; font-size: 10px; color: #f87171; margin-bottom: 6px; }
+    .switch-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 16px; line-height: 1.6; }
+    .switch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .switch-btn {
+      background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.12);
+      border-radius: 12px; padding: 10px 8px; cursor: pointer; text-align: center;
+      transition: all 0.15s;
+    }
+    .switch-btn:hover { border-color: #4ade80; background: rgba(74,222,128,0.08); }
+    .sw-emo  { font-size: 22px; display: block; margin-bottom: 3px; }
+    .sw-name { font-size: 8px; color: #fff; font-weight: 800; line-height: 1.4; word-break: break-word; }
+    .sw-hp   { font-size: 7px; margin-top: 2px; font-weight: 700; }
+    .sw-hp.full { color: #4ade80; } .sw-hp.mid { color: #facc15; } .sw-hp.low { color: #f87171; }
+
+    /* ── Round Result Overlay ── */
+    #round-result-overlay {
+      display: none; position: fixed; inset: 0; z-index: 59;
+      background: rgba(0,0,0,0.88); backdrop-filter: blur(8px);
+      align-items: center; justify-content: center;
+    }
+    #round-result-overlay.show { display: flex; }
+    .round-result-card {
+      background: linear-gradient(135deg, #1a1a35, #252545);
+      border-radius: 26px; padding: 32px 24px; text-align: center;
+      max-width: 360px; width: 92%;
+      animation: pop-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .rr-icon  { font-size: 50px; margin-bottom: 10px; }
+    .rr-title { font-family: 'Press Start 2P', monospace; font-size: 12px; margin-bottom: 8px; }
+    .rr-sub   { font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 10px; line-height: 1.7; }
+    .rr-xp    { font-family: 'Press Start 2P', monospace; font-size: 9px; color: #a78bfa; margin-bottom: 14px; }
+    .rr-progress { display: flex; gap: 6px; justify-content: center; margin-bottom: 18px; align-items: center; }
+    .rr-dot  { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); transition: all 0.3s; }
+    .rr-dot.won    { background: #FFD700; border-color: #FFD700; }
+    .rr-dot.active { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.4); }
+    .rr-dot.future { background: transparent; border-color: rgba(255,255,255,0.1); }
+    .rr-arrow { font-size: 11px; color: rgba(255,255,255,0.2); }
+    .rr-btn-continue {
+      width: 100%; padding: 14px; border-radius: 12px;
+      font-family: 'Press Start 2P', monospace; font-size: 9px;
+      background: linear-gradient(135deg, #FFD700, #f97316); color: #000;
+      border: none; cursor: pointer; margin-bottom: 8px;
+    }
+    .rr-btn-quit {
+      width: 100%; padding: 11px; border-radius: 10px;
+      font-family: 'Press Start 2P', monospace; font-size: 8px;
+      background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.35);
+      border: 2px solid rgba(255,255,255,0.08); cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -279,6 +524,24 @@
     <div class="picker-sub">Pick one from your owned cards to battle!</div>
     <div class="picker-grid" id="picker-grid"></div>
     <button class="start-btn press" id="start-btn" disabled onclick="startBattle()">⚔️ Battle!</button>
+    <button class="tournament-btn" onclick="showTeamPicker()">🏆 Tournament Mode</button>
+  </div>
+
+  <!-- ════════════ TEAM PICKER SCREEN ════════════ -->
+  <div id="team-picker-screen">
+    <div class="picker-title press">Build Your Team</div>
+    <div class="picker-sub">Select 6 Pokémon for the Tournament (in order)</div>
+    <div class="team-selection-bar" id="team-selection-bar">
+      <div class="team-slot" id="tslot-0"></div>
+      <div class="team-slot" id="tslot-1"></div>
+      <div class="team-slot" id="tslot-2"></div>
+      <div class="team-slot" id="tslot-3"></div>
+      <div class="team-slot" id="tslot-4"></div>
+      <div class="team-slot" id="tslot-5"></div>
+    </div>
+    <div class="picker-grid" id="team-picker-grid"></div>
+    <button class="start-tournament-btn press" id="start-tournament-btn" disabled onclick="startTournament()">🏆 Enter Tournament!</button>
+    <button class="back-to-single" onclick="showSinglePicker()">← Back to Single Battle</button>
   </div>
 
   <!-- ════════════ BATTLE SCREEN ════════════ -->
@@ -309,11 +572,26 @@
           <div class="hud-level" id="player-level">Lv.1</div>
           <div class="hp-label"><span>HP</span><span id="player-hp-num">—</span></div>
           <div class="hp-bar-bg"><div class="hp-bar-fill" id="player-hp-bar" style="width:100%;background:#4ade80"></div></div>
+          <div class="exp-bar-bg"><div class="exp-bar-fill" id="player-exp-bar" style="width:0%"></div></div>
+          <div class="hud-exp-label" id="player-exp-label">EXP 0 / 50</div>
         </div>
         <div class="sprite-wrap player-sprite-wrap" id="player-sprite-wrap">
           <div class="status-badge" id="player-status" style="display:none"></div>
           <img class="battle-sprite" id="player-sprite" src="" alt="player" />
         </div>
+      </div>
+    </div>
+
+    <!-- Team Status (tournament only) -->
+    <div class="team-status-row" id="team-status-row">
+      <div class="team-balls-wrap">
+        <div class="team-label-sm">YOUR TEAM</div>
+        <div class="team-balls" id="player-team-balls"></div>
+      </div>
+      <div class="tourn-round-display" id="tourn-round-display"></div>
+      <div class="team-balls-wrap" style="align-items:flex-end">
+        <div class="team-label-sm" style="text-align:right">ENEMY TEAM</div>
+        <div class="team-balls" id="enemy-team-balls"></div>
       </div>
     </div>
 
@@ -331,6 +609,69 @@
   </div><!-- end battle-screen -->
 
 </div><!-- end page -->
+
+<!-- Round Intro Overlay -->
+<div id="round-intro-overlay">
+  <div class="round-intro-card">
+    <div class="ri-round-badge" id="ri-round-badge">Round 1</div>
+    <div class="ri-trainer-emo" id="ri-trainer-emo">🎮</div>
+    <div class="ri-vs">VS</div>
+    <div class="ri-trainer-name" id="ri-trainer-name">Trainer</div>
+    <hr class="ri-divider">
+    <div class="ri-team-label">Enemy Team</div>
+    <div class="ri-team-row" id="ri-enemy-team"></div>
+    <div class="ri-team-label">Your Team</div>
+    <div class="ri-team-row" id="ri-player-team"></div>
+    <button class="ri-battle-btn" onclick="startTournamentBattle()">⚔️ Battle!</button>
+  </div>
+</div>
+
+<!-- Switch Pokémon Overlay -->
+<div id="switch-overlay">
+  <div class="switch-card">
+    <div class="switch-title">💀 Pokémon Fainted!</div>
+    <div class="switch-sub" id="switch-sub">Choose your next Pokémon!</div>
+    <div class="switch-grid" id="switch-grid"></div>
+  </div>
+</div>
+
+<!-- Round Result Overlay -->
+<div id="round-result-overlay">
+  <div class="round-result-card" id="round-result-card">
+    <div class="rr-icon"  id="rr-icon">🏆</div>
+    <div class="rr-title press" id="rr-title">Round Clear!</div>
+    <div class="rr-sub"   id="rr-sub"></div>
+    <div class="rr-xp"    id="rr-xp"></div>
+    <div class="rr-progress" id="rr-progress"></div>
+    <button class="rr-btn-continue" id="rr-btn-continue" onclick="continueToNextRound()">Continue →</button>
+    <button class="rr-btn-quit" onclick="quitTournament()">Quit Tournament</button>
+  </div>
+</div>
+
+<!-- Level-up overlay -->
+<div id="levelup-overlay">
+  <div class="levelup-card">
+    <div class="levelup-icon">⬆️</div>
+    <div class="levelup-title" id="levelup-title">LEVEL UP!</div>
+    <div class="levelup-sub" id="levelup-sub"></div>
+    <button class="levelup-ok" id="levelup-ok" onclick="closeLevelUp()">Awesome!</button>
+  </div>
+</div>
+
+<!-- Learn Move overlay -->
+<div id="learnmove-overlay">
+  <div class="learnmove-card">
+    <div class="learnmove-title">✨ New Move!</div>
+    <div class="learnmove-sub" id="learnmove-sub">wants to learn a new move!</div>
+    <div class="learnmove-new">
+      <div class="learnmove-new-name" id="learnmove-newname">—</div>
+      <div class="learnmove-new-meta" id="learnmove-newmeta">—</div>
+    </div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:10px;">Replace which move?</div>
+    <div class="learnmove-slots" id="learnmove-slots"></div>
+    <button class="learnmove-skip" onclick="skipLearnMove()">Don't learn this move</button>
+  </div>
+</div>
 
 <!-- Result overlay -->
 <div id="result-overlay">
@@ -574,18 +915,157 @@ const TYPE_EMO = {
 };
 
 /* ═══════════════════════════════════
+   LEVEL / EXP SYSTEM
+   - Stored in localStorage key 'poke_exp' as { [cardId]: totalExp }
+   - Level 1–9  : 2 active skill slots
+   - Level 10–19: 3 active skill slots
+   - Level 20+  : 4 active skill slots
+   - EXP needed per level = level * 50  (caps at Lv 100)
+═══════════════════════════════════ */
+const MAX_LEVEL = 100;
+
+function expForLevel(level) {
+  return level * 50;
+}
+
+function levelFromExp(totalExp) {
+  let lv = 1, rem = totalExp;
+  while (lv < MAX_LEVEL && rem >= expForLevel(lv)) {
+    rem -= expForLevel(lv);
+    lv++;
+  }
+  return lv;
+}
+
+function expProgressInLevel(totalExp) {
+  let lv = 1, rem = totalExp;
+  while (lv < MAX_LEVEL && rem >= expForLevel(lv)) {
+    rem -= expForLevel(lv);
+    lv++;
+  }
+  return { level: lv, current: lv >= MAX_LEVEL ? expForLevel(lv) : rem, needed: expForLevel(lv) };
+}
+
+function activeSkillSlots(level) {
+  if (level >= 20) return 4;
+  if (level >= 10) return 3;
+  return 2;
+}
+
+let pokeExpData = {};
+
+function loadExpData() {
+  try { pokeExpData = JSON.parse(localStorage.getItem('poke_exp') || '{}'); } catch(e) { pokeExpData = {}; }
+}
+
+function saveExpData() {
+  localStorage.setItem('poke_exp', JSON.stringify(pokeExpData));
+}
+
+function getCardTotalExp(cardId) {
+  return pokeExpData[cardId] || 0;
+}
+
+function addExpToCard(cardId, amount) {
+  const maxExp = Array.from({length: MAX_LEVEL}, (_, i) => expForLevel(i + 1)).reduce((a,b) => a+b, 0);
+  const before = getCardTotalExp(cardId);
+  const lvBefore = levelFromExp(before);
+  pokeExpData[cardId] = Math.min(before + amount, maxExp);
+  saveExpData();
+  const lvAfter = levelFromExp(pokeExpData[cardId]);
+  return { lvBefore, lvAfter };
+}
+
+function getCardLevel(cardId) {
+  return levelFromExp(getCardTotalExp(cardId));
+}
+
+/* Deterministic shuffle seeded by card id */
+function seededShuffle(arr, seed) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = ((seed * 1664525 + i * 1013904223) >>> 0) % (i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function cardSeed(cardId) {
+  return cardId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+}
+
+/* The full ordered move pool for a card (deterministic) */
+function getCardMovePool(card) {
+  const pool = (SKILL_POOLS[card.type] || SKILL_POOLS.Colorless);
+  return seededShuffle(pool, cardSeed(card.id));
+}
+
+/* Which moves has this card actually learned so far?
+   - Moves 0-1 available from Lv1
+   - Move 2 available from Lv10
+   - Move 3 available from Lv20
+   - Move 4 available from Lv35 (learnable but not auto-added)
+   - Move 5 available from Lv50 (learnable but not auto-added)
+   Custom overrides stored in 'poke_moves' localStorage. */
+const MOVE_THRESHOLDS = [1, 1, 10, 20, 35, 50];
+
+function getLearnedMoves(card) {
+  const level = getCardLevel(card.id);
+  const pool  = getCardMovePool(card);
+  // Check for custom moveset saved by player
+  let custom = {};
+  try { custom = JSON.parse(localStorage.getItem('poke_moves') || '{}'); } catch(e) {}
+  if (custom[card.id]) {
+    // Restore saved moveset (by move name)
+    const allMoves = Object.values(SKILL_POOLS).flat();
+    allMoves.push({ name:'Tackle', type:'Colorless', power:40, pp:35, effect:null });
+    return custom[card.id].map(name => allMoves.find(m => m.name === name)).filter(Boolean);
+  }
+  // Auto-build from level
+  const slots = activeSkillSlots(level);
+  const learned = [];
+  for (let i = 0; i < Math.min(pool.length, 4); i++) {
+    if (level >= MOVE_THRESHOLDS[i]) learned.push(pool[i]);
+  }
+  // Pad with Tackle if not enough unlocked
+  const tackle = { name:'Tackle', type:'Colorless', power:40, pp:35, effect:null };
+  while (learned.length < slots) learned.push(tackle);
+  return learned.slice(0, slots).map(s => ({ ...s, maxPp: s.pp, curPp: s.pp }));
+}
+
+function getSkillsForCard(card) {
+  return getLearnedMoves(card).map(s => ({ ...s, maxPp: s.pp, curPp: s.pp }));
+}
+
+/* Returns new learnable moves when going from lvBefore → lvAfter */
+function getNewLearnableMoves(card, lvBefore, lvAfter) {
+  const pool = getCardMovePool(card);
+  const thresholds = [35, 50]; // indices 4,5 in pool
+  const moves = [];
+  thresholds.forEach((t, i) => {
+    const poolIdx = 4 + i;
+    if (lvBefore < t && lvAfter >= t && pool[poolIdx]) {
+      moves.push(pool[poolIdx]);
+    }
+  });
+  return moves;
+}
+
+/* ═══════════════════════════════════
    STAT HELPERS
 ═══════════════════════════════════ */
 const RARITY_TIER = { 'Common':1,'Uncommon':2,'Rare':3,'Double Rare':4,'Illus. Rare':3,'Ultra Rare':5,'Special Art':5,'Hyper Rare':6 };
 
-function calcStats(card) {
+function calcStats(card, overrideLevel) {
   const t = RARITY_TIER[card.rarity] || 1;
+  const level = overrideLevel !== undefined ? overrideLevel : (5 + t * 8 + Math.floor(Math.random() * 3));
+  const lvMult = 1 + (level - 1) * 0.012;
   return {
-    maxHp: 60 + t * 25 + Math.floor(Math.random() * 10),
-    atk:   30 + t * 12,
-    def:   20 + t * 8,
-    spd:   20 + t * 5 + Math.floor(Math.random() * 10),
-    level: 5 + t * 8 + Math.floor(Math.random() * 3),
+    maxHp: Math.round((60 + t * 25 + Math.floor(Math.random() * 10)) * lvMult),
+    atk:   Math.round((30 + t * 12) * lvMult),
+    def:   Math.round((20 + t * 8)  * lvMult),
+    spd:   Math.round((20 + t * 5 + Math.floor(Math.random() * 10)) * lvMult),
+    level,
   };
 }
 
@@ -594,14 +1074,13 @@ function spriteUrl(dex) {
 }
 
 function getSkills(type) {
+  // Used only for enemy Pokémon (random shuffle, 4 moves)
   const pool = (SKILL_POOLS[type] || SKILL_POOLS.Colorless).slice();
-  // shuffle
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
   const skills = pool.slice(0, 3);
-  // always add a Normal move for variety
   skills.push({ name:'Tackle', type:'Colorless', power:40, pp:35, effect:null });
   return skills.map(s => ({ ...s, maxPp: s.pp, curPp: s.pp }));
 }
@@ -616,6 +1095,30 @@ let playerTurn  = true;
 let battling    = false;
 let selectedCardId = null;
 let wins = 0, losses = 0;
+
+// Level-up / learn-move queue
+let levelUpQueue   = [];
+let learnMoveQueue = [];
+let currentLearnCard = null;
+
+/* ═══════════════════════════════════
+   TOURNAMENT STATE
+═══════════════════════════════════ */
+const ROUND_NAMES   = ['Round 1', 'Round 2', 'Semi-Final', 'Championship'];
+const TRAINER_DATA  = [
+  { name:'Trainer Brock',     emo:'🪨', rarities:['Common','Uncommon'] },
+  { name:'Trainer Misty',     emo:'💧', rarities:['Common','Uncommon','Rare'] },
+  { name:'Elite Four Bruno',  emo:'🥊', rarities:['Uncommon','Rare'] },
+  { name:'Champion Red',      emo:'🔥', rarities:['Rare','Double Rare'] },
+];
+let tournamentActive  = false;
+let tournamentRound   = 0;
+let playerTeam        = [];   // full combatant objects for all 6 player Pokémon
+let enemyTeam         = [];   // full combatant objects for all 6 enemy Pokémon
+let playerActiveIdx   = 0;
+let enemyActiveIdx    = 0;
+let roundEnemyKills   = 0;    // enemy Pokémon defeated this round
+let selectedTeamIds   = [];   // card IDs chosen during team picker
 
 function loadOwned() {
   try { owned = JSON.parse(localStorage.getItem('poke_owned') || '{}'); } catch(e) { owned = {}; }
@@ -639,14 +1142,20 @@ function buildPicker() {
   }
 
   grid.innerHTML = ownedCards.map(card => {
-    const emo = TYPE_EMO[card.type] || '⭐';
+    const emo  = TYPE_EMO[card.type] || '⭐';
     const tier = RARITY_TIER[card.rarity] || 1;
-    const hp = 60 + tier * 25;
+    const hp   = 60 + tier * 25;
+    const lv   = getCardLevel(card.id);
+    const { current, needed } = expProgressInLevel(getCardTotalExp(card.id));
+    const expPct = lv >= MAX_LEVEL ? 100 : Math.round(current / needed * 100);
+    const slots  = activeSkillSlots(lv);
     return `<div class="pick-card" id="pick-${card.id}" onclick="selectCard('${card.id}')">
       <span class="pick-emo">${emo}</span>
       <div class="pick-name">${card.name}</div>
       <div class="pick-type">${card.type}</div>
       <div class="pick-hp">HP ~${hp}</div>
+      <div class="pick-level">Lv.${lv} · ${slots} moves</div>
+      <div class="pick-exp-bg"><div class="pick-exp-fill" style="width:${expPct}%"></div></div>
     </div>`;
   }).join('');
 }
@@ -662,13 +1171,14 @@ function selectCard(id) {
 /* ═══════════════════════════════════
    BUILD COMBATANT
 ═══════════════════════════════════ */
-function buildCombatant(card) {
-  const stats = calcStats(card);
+function buildCombatant(card, isPlayer) {
+  const level = isPlayer ? getCardLevel(card.id) : undefined;
+  const stats = calcStats(card, level);
   return {
     card,
     stats,
     hp: stats.maxHp,
-    skills: getSkills(card.type),
+    skills: isPlayer ? getSkillsForCard(card) : getSkills(card.type),
     status: null,      // null | 'psn' | 'brn' | 'par' | 'slp'
     statusTurns: 0,
     atkBuff: 0,        // +1/+2 stages
@@ -689,8 +1199,8 @@ function startBattle() {
   const pool = ALL_CARDS.filter(c => c.id !== selectedCardId);
   const enemy = pool[Math.floor(Math.random() * pool.length)];
 
-  playerPoke = buildCombatant(card);
-  enemyPoke  = buildCombatant(enemy);
+  playerPoke = buildCombatant(card, true);
+  enemyPoke  = buildCombatant(enemy, false);
   playerTurn = playerPoke.stats.spd >= enemyPoke.stats.spd;
   battling   = true;
 
@@ -740,7 +1250,14 @@ function updateHUD() {
   const p = playerPoke, e = enemyPoke;
 
   document.getElementById('player-name').textContent  = p.card.name;
-  document.getElementById('player-level').textContent = 'Lv.' + p.stats.level;
+  const plv  = getCardLevel(p.card.id);
+  const pexp = expProgressInLevel(getCardTotalExp(p.card.id));
+  const pexpPct = plv >= MAX_LEVEL ? 100 : Math.round(pexp.current / pexp.needed * 100);
+  document.getElementById('player-level').textContent = 'Lv.' + plv;
+  const pexpBar = document.getElementById('player-exp-bar');
+  if (pexpBar) pexpBar.style.width = pexpPct + '%';
+  const pexpLabel = document.getElementById('player-exp-label');
+  if (pexpLabel) pexpLabel.textContent = plv >= MAX_LEVEL ? 'MAX LEVEL' : `EXP ${pexp.current} / ${pexp.needed}`;
   document.getElementById('player-hp-num').textContent = Math.max(0, p.hp) + ' / ' + p.stats.maxHp;
   const ppct = Math.max(0, p.hp / p.stats.maxHp * 100);
   const pbar = document.getElementById('player-hp-bar');
@@ -1114,6 +1631,12 @@ function disableSkills(disable) {
 function flee() {
   if (!battling) return;
   battling = false;
+  disableSkills(true);
+  if (tournamentActive) {
+    appendLog(`<span class="log-miss">You forfeited the match!</span>`);
+    setTimeout(() => endRound(false), 800);
+    return;
+  }
   losses++;
   document.getElementById('result-icon').textContent  = '🏃';
   document.getElementById('result-title').textContent = 'Ran Away!';
@@ -1128,28 +1651,483 @@ function flee() {
    END BATTLE
 ═══════════════════════════════════ */
 function endBattle(playerWon) {
+  if (tournamentActive) {
+    handleTournamentKO(playerWon);
+    return;
+  }
   battling = false;
   disableSkills(true);
 
+  const card = playerPoke.card;
+  levelUpQueue   = [];
+  learnMoveQueue = [];
+  currentLearnCard = card;
+
   if (playerWon) {
     wins++;
-    const xp = Math.round((enemyPoke.stats.level * 40) * (RARITY_TIER[enemyPoke.card.rarity] || 1));
+    const xpGain = Math.round((enemyPoke.stats.level * 30) * (RARITY_TIER[enemyPoke.card.rarity] || 1));
+    const { lvBefore, lvAfter } = addExpToCard(card.id, xpGain);
+    const lvUpText = lvAfter > lvBefore
+      ? ` <span style="color:#a78bfa">⬆️ Lv.${lvBefore}→${lvAfter}!</span>` : '';
     document.getElementById('result-icon').textContent  = '🏆';
     document.getElementById('result-title').textContent = 'Victory!';
     document.getElementById('result-title').style.color = '#FFD700';
     document.getElementById('result-sub').innerHTML     = `You defeated <b>${enemyPoke.card.name}</b>!`;
-    document.getElementById('result-xp').textContent    = `+${xp} XP earned! | Wins: ${wins}`;
+    document.getElementById('result-xp').innerHTML      =
+      `<span style="color:#fcd34d">+${xpGain} XP</span>${lvUpText} | Wins: ${wins}`;
     document.getElementById('result-card').style.borderColor = '#FFD700';
+    if (lvAfter > lvBefore) {
+      levelUpQueue.push({ card, lvBefore, lvAfter });
+      getNewLearnableMoves(card, lvBefore, lvAfter).forEach(m => learnMoveQueue.push(m));
+    }
   } else {
     losses++;
+    const xpGain = Math.round(enemyPoke.stats.level * 5);
+    const { lvBefore, lvAfter } = addExpToCard(card.id, xpGain);
+    const lvUpText = lvAfter > lvBefore
+      ? ` <span style="color:#a78bfa">⬆️ Lv.${lvBefore}→${lvAfter}!</span>` : '';
     document.getElementById('result-icon').textContent  = '💀';
     document.getElementById('result-title').textContent = 'Defeated!';
     document.getElementById('result-title').style.color = '#f87171';
-    document.getElementById('result-sub').innerHTML     = `<b>${playerPoke.card.name}</b> fainted…`;
-    document.getElementById('result-xp').textContent    = `Wins: ${wins}  |  Losses: ${losses}`;
+    document.getElementById('result-sub').innerHTML     = `<b>${card.name}</b> fainted…`;
+    document.getElementById('result-xp').innerHTML      =
+      `<span style="color:#94a3b8">+${xpGain} XP</span>${lvUpText} | Wins: ${wins} | Losses: ${losses}`;
     document.getElementById('result-card').style.borderColor = '#f87171';
+    if (lvAfter > lvBefore) {
+      levelUpQueue.push({ card, lvBefore, lvAfter });
+      getNewLearnableMoves(card, lvBefore, lvAfter).forEach(m => learnMoveQueue.push(m));
+    }
   }
   document.getElementById('result-overlay').classList.add('show');
+}
+
+/* ═══════════════════════════════════
+   LEVEL-UP NOTIFICATION FLOW
+═══════════════════════════════════ */
+function showNextLevelUp() {
+  if (!levelUpQueue.length) { showNextLearnMove(); return; }
+  const { card, lvBefore, lvAfter } = levelUpQueue.shift();
+  const slotsBefore = activeSkillSlots(lvBefore);
+  const slotsAfter  = activeSkillSlots(lvAfter);
+  let unlockNote = '';
+  if (slotsAfter > slotsBefore) {
+    unlockNote = `<br><span style="color:#FFD700">🔓 New move slot unlocked! (${slotsAfter} moves active)</span>`;
+  }
+  document.getElementById('levelup-title').textContent = `${card.name} leveled up!`;
+  document.getElementById('levelup-sub').innerHTML =
+    `Lv.<b>${lvBefore}</b> → Lv.<b style="color:#a78bfa">${lvAfter}</b>${unlockNote}`;
+  document.getElementById('levelup-overlay').classList.add('show');
+}
+
+function closeLevelUp() {
+  document.getElementById('levelup-overlay').classList.remove('show');
+  if (levelUpQueue.length) { showNextLevelUp(); return; }
+  if (learnMoveQueue.length) { showNextLearnMove(); return; }
+  if (typeof window._afterLevelUpAction === 'function') {
+    const fn = window._afterLevelUpAction;
+    window._afterLevelUpAction = null;
+    fn();
+  }
+}
+
+/* ═══════════════════════════════════
+   LEARN MOVE FLOW
+═══════════════════════════════════ */
+function showNextLearnMove() {
+  if (!learnMoveQueue.length || !currentLearnCard) return;
+  const newMove = learnMoveQueue.shift();
+  const card    = currentLearnCard;
+  const current = getLearnedMoves(card);
+
+  const emo = TYPE_EMO[newMove.type] || '⭐';
+  document.getElementById('learnmove-sub').textContent = `${card.name} can learn a new move!`;
+  document.getElementById('learnmove-newname').textContent = `${emo} ${newMove.name}`;
+  document.getElementById('learnmove-newmeta').textContent =
+    `${newMove.power ? 'PWR ' + newMove.power : 'Status'} · ${newMove.type} · PP ${newMove.pp}`;
+
+  // Store newMove safely for the onclick handlers
+  window._pendingLearnMove  = newMove;
+  window._pendingLearnCard  = card;
+  window._pendingLearnSlots = current;
+
+  const slotsEl = document.getElementById('learnmove-slots');
+  slotsEl.innerHTML = current.map((sk, i) => {
+    const semo = TYPE_EMO[sk.type] || '⭐';
+    return `<div class="learnmove-slot" onclick="confirmLearnMove(${i})">
+      <span class="learnmove-slot-name">${semo} ${sk.name}</span>
+      <span class="learnmove-slot-meta">${sk.power ? 'PWR ' + sk.power : 'Status'} · ${sk.type}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('learnmove-overlay').classList.add('show');
+}
+
+function confirmLearnMove(slotIdx) {
+  const newMove = window._pendingLearnMove;
+  const card    = window._pendingLearnCard;
+  const skills  = window._pendingLearnSlots.slice();
+  skills[slotIdx] = { ...newMove };
+  // Save custom moveset
+  try {
+    const custom = JSON.parse(localStorage.getItem('poke_moves') || '{}');
+    custom[card.id] = skills.map(s => s.name);
+    localStorage.setItem('poke_moves', JSON.stringify(custom));
+  } catch(e) {}
+  document.getElementById('learnmove-overlay').classList.remove('show');
+  if (learnMoveQueue.length) { showNextLearnMove(); return; }
+  if (typeof window._afterLevelUpAction === 'function') {
+    const fn = window._afterLevelUpAction;
+    window._afterLevelUpAction = null;
+    fn();
+  }
+}
+
+function skipLearnMove() {
+  document.getElementById('learnmove-overlay').classList.remove('show');
+  if (learnMoveQueue.length) { showNextLearnMove(); return; }
+  if (typeof window._afterLevelUpAction === 'function') {
+    const fn = window._afterLevelUpAction;
+    window._afterLevelUpAction = null;
+    fn();
+  }
+}
+
+/* ═══════════════════════════════════
+   TOURNAMENT – TEAM PICKER
+═══════════════════════════════════ */
+function showTeamPicker() {
+  document.getElementById('picker-screen').style.display      = 'none';
+  document.getElementById('team-picker-screen').style.display = 'block';
+  selectedTeamIds = [];
+  buildTeamPickerGrid();
+}
+
+function showSinglePicker() {
+  document.getElementById('team-picker-screen').style.display = 'none';
+  document.getElementById('picker-screen').style.display      = 'block';
+  buildPicker();
+}
+
+function buildTeamPickerGrid() {
+  const grid = document.getElementById('team-picker-grid');
+  const ownedCards = ALL_CARDS.filter(c => owned[c.id]);
+  if (!ownedCards.length) {
+    grid.innerHTML = '<div class="no-owned-msg">No cards owned yet!</div>';
+    return;
+  }
+  grid.innerHTML = ownedCards.map(card => {
+    const emo = TYPE_EMO[card.type] || '⭐';
+    const lv  = getCardLevel(card.id);
+    return `<div class="pick-card" id="tpick-${card.id}" onclick="toggleTeamMember('${card.id}')">
+      <span class="pick-emo">${emo}</span>
+      <div class="pick-name">${card.name}</div>
+      <div class="pick-type">${card.type}</div>
+      <div class="pick-level">Lv.${lv}</div>
+    </div>`;
+  }).join('');
+  updateTeamPickerUI();
+}
+
+function toggleTeamMember(id) {
+  const idx = selectedTeamIds.indexOf(id);
+  if (idx !== -1) {
+    selectedTeamIds.splice(idx, 1);
+  } else if (selectedTeamIds.length < 6) {
+    selectedTeamIds.push(id);
+  }
+  updateTeamPickerUI();
+}
+
+function updateTeamPickerUI() {
+  document.querySelectorAll('[id^="tpick-"]').forEach(el => {
+    const cardId = el.id.replace('tpick-', '');
+    const idx = selectedTeamIds.indexOf(cardId);
+    el.classList.toggle('team-selected', idx !== -1);
+    const existing = el.querySelector('.team-order-badge');
+    if (existing) existing.remove();
+    if (idx !== -1) {
+      const badge = document.createElement('div');
+      badge.className = 'team-order-badge';
+      badge.textContent = idx + 1;
+      el.appendChild(badge);
+    }
+  });
+  // Update slot bar
+  for (let i = 0; i < 6; i++) {
+    const slot = document.getElementById('tslot-' + i);
+    if (!slot) continue;
+    if (selectedTeamIds[i]) {
+      const card = ALL_CARDS.find(c => c.id === selectedTeamIds[i]);
+      slot.classList.add('filled');
+      slot.textContent = card ? (TYPE_EMO[card.type] || '⭐') : '';
+    } else {
+      slot.classList.remove('filled');
+      slot.textContent = '';
+    }
+  }
+  document.getElementById('start-tournament-btn').disabled = (selectedTeamIds.length !== 6);
+}
+
+/* ═══════════════════════════════════
+   TOURNAMENT – SETUP & ROUNDS
+═══════════════════════════════════ */
+function startTournament() {
+  if (selectedTeamIds.length !== 6) return;
+  tournamentActive = true;
+  tournamentRound  = 0;
+  playerTeam = selectedTeamIds.map(id => {
+    const card = ALL_CARDS.find(c => c.id === id);
+    return buildCombatant(card, true);
+  });
+  document.getElementById('team-picker-screen').style.display = 'none';
+  showRoundIntro();
+}
+
+function buildEnemyTeam(roundIdx) {
+  const allowed = TRAINER_DATA[roundIdx].rarities;
+  let pool = ALL_CARDS.filter(c => allowed.includes(c.rarity));
+  if (pool.length < 6) pool = ALL_CARDS.slice();
+  // Shuffle and pick 6
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, 6).map(card => buildCombatant(card, false));
+}
+
+function showRoundIntro() {
+  const t = TRAINER_DATA[tournamentRound];
+  enemyTeam = buildEnemyTeam(tournamentRound);
+
+  document.getElementById('ri-round-badge').textContent = ROUND_NAMES[tournamentRound];
+  document.getElementById('ri-trainer-emo').textContent  = t.emo;
+  document.getElementById('ri-trainer-name').textContent = t.name;
+  document.getElementById('ri-enemy-team').innerHTML = enemyTeam.map(c =>
+    `<div class="ri-chip" title="${c.card.name}">${TYPE_EMO[c.card.type] || '⭐'}</div>`
+  ).join('');
+  document.getElementById('ri-player-team').innerHTML = playerTeam.map(c =>
+    `<div class="ri-chip" title="${c.card.name}">${TYPE_EMO[c.card.type] || '⭐'}</div>`
+  ).join('');
+  document.getElementById('round-intro-overlay').classList.add('show');
+}
+
+function startTournamentBattle() {
+  document.getElementById('round-intro-overlay').classList.remove('show');
+  playerActiveIdx  = 0;
+  enemyActiveIdx   = 0;
+  roundEnemyKills  = 0;
+
+  playerPoke = playerTeam[playerActiveIdx];
+  enemyPoke  = enemyTeam[enemyActiveIdx];
+  playerTurn = playerPoke.stats.spd >= enemyPoke.stats.spd;
+  battling   = true;
+
+  document.getElementById('picker-screen').style.display     = 'none';
+  document.getElementById('battle-screen').style.display     = 'block';
+  document.getElementById('team-status-row').style.display   = 'flex';
+  document.getElementById('tourn-round-display').textContent = ROUND_NAMES[tournamentRound];
+  document.querySelector('.flee-btn').textContent = '🏳️ Forfeit';
+
+  document.getElementById('player-sprite').src = spriteUrl(playerPoke.card.num);
+  document.getElementById('enemy-sprite').src  = spriteUrl(enemyPoke.card.num);
+
+  renderSkills();
+  updateHUD();
+  renderTeamStatus();
+  const t = TRAINER_DATA[tournamentRound];
+  setLog(`${t.name} (<b>${t.emo}</b>) sends out <b>${enemyPoke.card.name}</b>! ${playerTurn ? 'You go first!' : 'Enemy goes first!'}`);
+
+  if (!playerTurn) { disableSkills(true); setTimeout(enemyTurn, 1200); }
+  else             { setTurnBadge(true); }
+}
+
+function renderTeamStatus() {
+  if (!tournamentActive) return;
+  const pb = document.getElementById('player-team-balls');
+  const eb = document.getElementById('enemy-team-balls');
+  if (!pb || !eb) return;
+  pb.innerHTML = playerTeam.map((p, i) => {
+    const cls = p.hp <= 0 ? 'fainted' : i === playerActiveIdx ? 'active' : '';
+    return `<div class="t-ball ${cls}" title="${p.card.name}"></div>`;
+  }).join('');
+  eb.innerHTML = enemyTeam.map((e, i) => {
+    const cls = e.hp <= 0 ? 'fainted' : i === enemyActiveIdx ? 'active' : '';
+    return `<div class="t-ball ${cls}" title="${e.card.name}"></div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════
+   TOURNAMENT – KO HANDLING
+═══════════════════════════════════ */
+function handleTournamentKO(playerWon) {
+  battling = false;
+  disableSkills(true);
+  renderTeamStatus();
+
+  if (playerWon) {
+    roundEnemyKills++;
+    // Find next alive enemy
+    let nextIdx = -1;
+    for (let i = enemyActiveIdx + 1; i < enemyTeam.length; i++) {
+      if (enemyTeam[i].hp > 0) { nextIdx = i; break; }
+    }
+    if (nextIdx === -1) {
+      setTimeout(() => endRound(true), 900);
+    } else {
+      enemyActiveIdx = nextIdx;
+      enemyPoke = enemyTeam[enemyActiveIdx];
+      setTimeout(() => {
+        document.getElementById('enemy-sprite').src = spriteUrl(enemyPoke.card.num);
+        const t = TRAINER_DATA[tournamentRound];
+        appendLog(`<span style="color:#f97316">${t.name} sends out <b>${enemyPoke.card.name}</b>!</span>`);
+        renderTeamStatus();
+        updateHUD();
+        battling = true;
+        renderSkills();
+        endEnemyTurn();  // player gets next move
+      }, 900);
+    }
+  } else {
+    // Player Pokémon fainted
+    const alive = playerTeam.filter((p, i) => i !== playerActiveIdx && p.hp > 0);
+    if (!alive.length) {
+      setTimeout(() => endRound(false), 900);
+    } else {
+      setTimeout(() => showSwitchScreen(), 700);
+    }
+  }
+}
+
+function showSwitchScreen() {
+  document.getElementById('switch-sub').innerHTML =
+    `<b>${playerPoke.card.name}</b> fainted! Choose your next Pokémon!`;
+  const available = playerTeam
+    .map((p, i) => ({ ...p, teamIdx: i }))
+    .filter(p => p.teamIdx !== playerActiveIdx && p.hp > 0);
+  document.getElementById('switch-grid').innerHTML = available.map(p => {
+    const emo   = TYPE_EMO[p.card.type] || '⭐';
+    const pct   = p.hp / p.stats.maxHp;
+    const hpCls = pct > 0.5 ? 'full' : pct > 0.2 ? 'mid' : 'low';
+    return `<div class="switch-btn" onclick="switchToPokemon(${p.teamIdx})">
+      <span class="sw-emo">${emo}</span>
+      <div class="sw-name">${p.card.name}</div>
+      <div class="sw-hp ${hpCls}">HP ${Math.max(0, p.hp)} / ${p.stats.maxHp}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('switch-overlay').classList.add('show');
+}
+
+function switchToPokemon(idx) {
+  document.getElementById('switch-overlay').classList.remove('show');
+  playerActiveIdx = idx;
+  playerPoke = playerTeam[idx];
+  document.getElementById('player-sprite').src = spriteUrl(playerPoke.card.num);
+  appendLog(`<span style="color:#4ade80">Go, <b>${playerPoke.card.name}</b>!</span>`);
+  renderTeamStatus();
+  updateHUD();
+  renderSkills();
+  battling   = true;
+  playerTurn = true;
+  setTurnBadge(true);
+  disableSkills(false);
+}
+
+/* ═══════════════════════════════════
+   TOURNAMENT – END ROUND
+═══════════════════════════════════ */
+function endRound(playerWon) {
+  battling = false;
+  disableSkills(true);
+  const t = TRAINER_DATA[tournamentRound];
+  const xpAlive   = (tournamentRound + 1) * 300;
+  const xpFainted = Math.floor(xpAlive / 2);
+
+  playerTeam.forEach(p => {
+    addExpToCard(p.card.id, p.hp > 0 ? xpAlive : xpFainted);
+  });
+
+  if (playerWon && tournamentRound === ROUND_NAMES.length - 1) {
+    // TOURNAMENT CHAMPION
+    const xpChamp = 2000;
+    playerTeam.forEach(p => addExpToCard(p.card.id, xpChamp));
+    showRoundResult(true, xpAlive + xpChamp, true);
+    return;
+  }
+  showRoundResult(playerWon, playerWon ? xpAlive : 50, false);
+}
+
+function buildProgressDots(wonThisRound) {
+  return ROUND_NAMES.map((name, i) => {
+    let cls;
+    if (i < tournamentRound)                  cls = 'won';
+    else if (i === tournamentRound && wonThisRound) cls = 'won';
+    else if (i === tournamentRound + 1 && wonThisRound) cls = 'active';
+    else                                       cls = 'future';
+    return `<div class="rr-dot ${cls}" title="${name}"></div>`;
+  }).join('<span class="rr-arrow">→</span>');
+}
+
+function showRoundResult(playerWon, xpBonus, isChampion) {
+  const t = TRAINER_DATA[tournamentRound];
+  if (isChampion) {
+    document.getElementById('rr-icon').textContent   = '👑';
+    document.getElementById('rr-title').textContent  = 'CHAMPION!';
+    document.getElementById('rr-title').style.color  = '#FFD700';
+    document.getElementById('rr-sub').innerHTML      =
+      `You defeated all challengers!<br><b style="color:#FFD700">Tournament Champion! 🎉</b>`;
+    document.getElementById('rr-btn-continue').textContent = '🏠 Return Home';
+    document.getElementById('rr-btn-continue').onclick = quitTournament;
+    document.getElementById('round-result-card').style.borderColor = '#FFD700';
+  } else if (playerWon) {
+    document.getElementById('rr-icon').textContent   = '🏆';
+    document.getElementById('rr-title').textContent  = `${ROUND_NAMES[tournamentRound]} Clear!`;
+    document.getElementById('rr-title').style.color  = '#FFD700';
+    document.getElementById('rr-sub').innerHTML      =
+      `You defeated <b>${t.name}</b>!<br><span style="color:#4ade80">Your team rested and healed fully!</span>`;
+    document.getElementById('rr-btn-continue').textContent = `▶ ${ROUND_NAMES[tournamentRound + 1]}`;
+    document.getElementById('rr-btn-continue').onclick = continueToNextRound;
+    document.getElementById('round-result-card').style.borderColor = '#FFD700';
+  } else {
+    document.getElementById('rr-icon').textContent   = '💀';
+    document.getElementById('rr-title').textContent  = 'Eliminated!';
+    document.getElementById('rr-title').style.color  = '#f87171';
+    document.getElementById('rr-sub').innerHTML      =
+      `Defeated by <b>${t.name}</b>.<br>Better luck next time!`;
+    document.getElementById('rr-btn-continue').style.display = 'none';
+    document.getElementById('round-result-card').style.borderColor = '#f87171';
+  }
+  if (!isChampion) document.getElementById('rr-btn-continue').style.display = 'block';
+  document.getElementById('rr-xp').textContent      = `All Pokémon: +${xpBonus} XP`;
+  document.getElementById('rr-progress').innerHTML  = buildProgressDots(playerWon);
+  document.getElementById('round-result-overlay').classList.add('show');
+}
+
+function continueToNextRound() {
+  document.getElementById('round-result-overlay').classList.remove('show');
+  document.getElementById('battle-screen').style.display   = 'none';
+  document.getElementById('team-status-row').style.display = 'none';
+  document.querySelector('.flee-btn').textContent = '🏃 Run Away';
+  tournamentRound++;
+  // Fully restore player team
+  playerTeam.forEach(p => {
+    p.stats  = calcStats(p.card, getCardLevel(p.card.id));
+    p.hp     = p.stats.maxHp;
+    p.status = null; p.statusTurns = 0; p.atkBuff = 0; p.leech = false; p.aquaring = false;
+    p.skills = getSkillsForCard(p.card);
+  });
+  showRoundIntro();
+}
+
+function quitTournament() {
+  document.getElementById('round-result-overlay').classList.remove('show');
+  document.getElementById('battle-screen').style.display   = 'none';
+  document.getElementById('team-status-row').style.display = 'none';
+  document.querySelector('.flee-btn').textContent = '🏃 Run Away';
+  tournamentActive = false;
+  tournamentRound  = 0;
+  playerTeam = []; enemyTeam = [];
+  document.getElementById('picker-screen').style.display = 'block';
+  buildPicker();
 }
 
 /* ═══════════════════════════════════
@@ -1157,21 +2135,41 @@ function endBattle(playerWon) {
 ═══════════════════════════════════ */
 function rematch() {
   document.getElementById('result-overlay').classList.remove('show');
-  startBattle();
+  if (levelUpQueue.length || learnMoveQueue.length) {
+    // After all overlays close, start next battle
+    window._afterLevelUpAction = () => startBattle();
+    showNextLevelUp();
+  } else {
+    startBattle();
+  }
 }
 function backToPicker() {
   document.getElementById('result-overlay').classList.remove('show');
+  if (levelUpQueue.length || learnMoveQueue.length) {
+    window._afterLevelUpAction = () => {
+      document.getElementById('battle-screen').style.display  = 'none';
+      document.getElementById('picker-screen').style.display  = 'block';
+      selectedCardId = null;
+      document.getElementById('start-btn').disabled = true;
+      document.querySelectorAll('.pick-card').forEach(el => el.classList.remove('selected'));
+      buildPicker();
+    };
+    showNextLevelUp();
+    return;
+  }
   document.getElementById('battle-screen').style.display  = 'none';
   document.getElementById('picker-screen').style.display  = 'block';
   selectedCardId = null;
   document.getElementById('start-btn').disabled = true;
   document.querySelectorAll('.pick-card').forEach(el => el.classList.remove('selected'));
+  buildPicker();
 }
 
 /* ═══════════════════════════════════
    INIT
 ═══════════════════════════════════ */
 loadOwned();
+loadExpData();
 buildPicker();
 </script>
 </body>
