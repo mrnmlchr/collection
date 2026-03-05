@@ -183,6 +183,20 @@
     .set-card.mega:hover    { box-shadow: 0 12px 40px rgba(124,58,237,0.4), 0 0 60px rgba(124,58,237,0.1); border-color: rgba(167,139,250,0.7); }
     .set-card.mega:hover::before { opacity: 1; }
 
+    /* Genetic Apex theme */
+    .set-card.apex::before  { background: radial-gradient(ellipse at 30% 0%, rgba(252,94,0,0.18) 0%, transparent 70%); }
+    .set-card.apex          { border-color: rgba(220,38,38,0.35); }
+    .set-card.apex:hover    { box-shadow: 0 12px 40px rgba(220,38,38,0.4), 0 0 60px rgba(245,158,11,0.1); border-color: rgba(220,38,38,0.7); }
+    .set-card.apex:hover::before { opacity: 1; }
+    .badge-apex { background: rgba(220,38,38,0.3); color: #fca5a5; border: 1px solid rgba(220,38,38,0.5); }
+
+    /* Mythical Island theme */
+    .set-card.myt::before   { background: radial-gradient(ellipse at 30% 0%, rgba(168,85,247,0.18) 0%, transparent 70%); }
+    .set-card.myt           { border-color: rgba(168,85,247,0.35); }
+    .set-card.myt:hover     { box-shadow: 0 12px 40px rgba(168,85,247,0.4), 0 0 60px rgba(236,72,153,0.1); border-color: rgba(168,85,247,0.7); }
+    .set-card.myt:hover::before { opacity: 1; }
+    .badge-myt { background: rgba(168,85,247,0.3); color: #e9d5ff; border: 1px solid rgba(168,85,247,0.5); }
+
     /* Coming soon */
     .set-card.coming-soon {
       opacity: 0.4;
@@ -314,7 +328,7 @@
         <div class="gs-lbl">Owned</div>
       </div>
       <div class="gs-item">
-        <div class="gs-num" id="g-sets">1</div>
+        <div class="gs-num" id="g-sets">3</div>
         <div class="gs-lbl">Sets</div>
       </div>
       <div class="gs-item">
@@ -391,25 +405,37 @@
         <div class="set-open-btn">📖 Open Binder</div>
       </a>
 
-      <!-- ── Placeholder #1 ── -->
-      <div class="set-card coming-soon">
-        <span class="set-icon">🌑</span>
-        <div class="set-badge badge-future">Coming Soon</div>
-        <div class="set-name">Next Set</div>
-        <div class="set-meta">TBA</div>
-        <div class="set-progress-row"><span>Progress</span><span>— / —</span></div>
-        <div class="set-progress-bar-bg"><div class="set-progress-fill" style="width:0%"></div></div>
-      </div>
+      <!-- ── Genetic Apex ── -->
+      <a href="genetic-apex.html" class="set-card apex">
+        <span class="set-icon">🧬</span>
+        <div class="set-badge badge-apex">A1 · Oct 2024</div>
+        <div class="set-name">Genetic<br>Apex</div>
+        <div class="set-meta">226 cards · Charizard / Mewtwo / Pikachu</div>
+        <div class="set-progress-row">
+          <span>Progress</span>
+          <span id="apex-pct-lbl">0 / 226</span>
+        </div>
+        <div class="set-progress-bar-bg">
+          <div class="set-progress-fill" id="apex-fill" style="width:0%;background:linear-gradient(90deg,#dc2626,#f59e0b)"></div>
+        </div>
+        <div class="set-open-btn" style="background:linear-gradient(135deg,#dc2626,#f59e0b)">📖 Open Binder</div>
+      </a>
 
-      <!-- ── Placeholder #2 ── -->
-      <div class="set-card coming-soon">
-        <span class="set-icon">🌟</span>
-        <div class="set-badge badge-future">Coming Soon</div>
-        <div class="set-name">Future Set</div>
-        <div class="set-meta">TBA</div>
-        <div class="set-progress-row"><span>Progress</span><span>— / —</span></div>
-        <div class="set-progress-bar-bg"><div class="set-progress-fill" style="width:0%"></div></div>
-      </div>
+      <!-- ── Mythical Island ── -->
+      <a href="mythical-island.html" class="set-card myt">
+        <span class="set-icon">🌸</span>
+        <div class="set-badge badge-myt">A1a · Dec 2024</div>
+        <div class="set-name">Mythical<br>Island</div>
+        <div class="set-meta">86 cards · Mew Pack</div>
+        <div class="set-progress-row">
+          <span>Progress</span>
+          <span id="myt-pct-lbl">0 / 86</span>
+        </div>
+        <div class="set-progress-bar-bg">
+          <div class="set-progress-fill" id="myt-fill" style="width:0%;background:linear-gradient(90deg,#7c3aed,#ec4899)"></div>
+        </div>
+        <div class="set-open-btn" style="background:linear-gradient(135deg,#7c3aed,#ec4899)">📖 Open Binder</div>
+      </a>
 
     </div>
 
@@ -423,8 +449,11 @@
     (function () {
       // Add more sets here as new HTML files are created
       const SETS = [
-        { key: 'meg1', total: 188, fillId: 'mega-fill', lblId: 'mega-pct-lbl' },
+        { key: 'meg1',  total: 188, fillId: 'mega-fill', lblId: 'mega-pct-lbl' },
+        { key: 'a1',    total: 226, fillId: 'apex-fill', lblId: 'apex-pct-lbl' },
+        { key: 'a1a',   total: 86,  fillId: 'myt-fill',  lblId: 'myt-pct-lbl'  },
       ];
+      document.getElementById('g-sets').textContent = SETS.length;
 
       let totalCards = 0, totalOwned = 0;
       let owned = {};

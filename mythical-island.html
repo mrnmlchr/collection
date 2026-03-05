@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mythical Island · Pokémon TCG Pocket Binder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root { --gold:#FFD700; --red:#CC0000; --blue:#3B4CCA; }
+    body { font-family:'Nunito',sans-serif; }
+    .bg-poke { background:radial-gradient(ellipse at top,#0d1b3e 0%,#1a1a2e 55%,#0a0a18 100%); min-height:100vh; }
+    .press { font-family:'Press Start 2P',cursive; }
+    .stars { position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;
+      background-image:
+        radial-gradient(1px 1px at 10% 15%,rgba(255,255,255,0.5) 0%,transparent 80%),
+        radial-gradient(1px 1px at 30% 60%,rgba(255,255,255,0.4) 0%,transparent 80%),
+        radial-gradient(1px 1px at 55% 25%,rgba(255,255,255,0.6) 0%,transparent 80%),
+        radial-gradient(1px 1px at 70% 80%,rgba(255,255,255,0.3) 0%,transparent 80%),
+        radial-gradient(1px 1px at 85% 40%,rgba(255,255,255,0.5) 0%,transparent 80%),
+        radial-gradient(1px 1px at 20% 90%,rgba(255,255,255,0.3) 0%,transparent 80%),
+        radial-gradient(1px 1px at 60% 50%,rgba(255,255,255,0.2) 0%,transparent 80%),
+        radial-gradient(1px 1px at 75% 5%, rgba(255,255,255,0.6) 0%,transparent 80%); }
+    .binder-wrap { background:linear-gradient(135deg,#1c1c2a,#252535);border:3px solid #3a3a5c;border-radius:18px;box-shadow:0 0 60px rgba(157,78,221,0.18),inset 0 1px 0 rgba(255,255,255,0.05); }
+    .binder-spine { background:linear-gradient(180deg,#1a1a2e,#0d0d1f);border-right:3px solid #3a3a5c;box-shadow:inset -4px 0 12px rgba(0,0,0,0.5);position:relative; }
+    .ring { width:28px;height:28px;border-radius:50%;border:4px solid #4a4a6a;background:radial-gradient(circle at 35% 35%,#8a8aaa,#3a3a5a);box-shadow:0 2px 4px rgba(0,0,0,0.6),inset 0 1px 2px rgba(255,255,255,0.15);position:relative;z-index:2; }
+    .ring::after { content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:#1a1a2e;box-shadow:inset 0 1px 3px rgba(0,0,0,0.8); }
+    .card-slot { transition:transform 0.25s ease,box-shadow 0.25s ease;cursor:pointer;user-select:none; }
+    .card-slot:hover { transform:translateY(-6px) scale(1.03); }
+    .card-slot.owned { box-shadow:0 0 18px rgba(255,215,0,0.55),0 0 6px rgba(255,215,0,0.3); }
+    .card-frame { background:linear-gradient(135deg,#2a2a45,#1e1e35);border:2px solid #3a3a6a;border-radius:12px;overflow:hidden;position:relative; }
+    .card-slot.owned .card-frame { border-color:#FFD700; }
+    .card-img-wrap { background:#111120;overflow:hidden;position:relative; }
+    .card-img-wrap img { width:100%;aspect-ratio:63/88;object-fit:cover;display:block;transition:filter 0.3s; }
+    .card-img-wrap img.hidden { display:none; }
+    .card-face-placeholder { width:100%;aspect-ratio:63/88;display:flex;flex-direction:column;overflow:hidden;border-radius:8px 8px 0 0;background:#1a1a2e;font-family:'Nunito',sans-serif; }
+    .pf-header { padding:6px 8px 4px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0; }
+    .pf-header-name { font-size:9px;font-weight:900;color:#fff;line-height:1.1;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .pf-hp { font-size:8px;font-weight:900;color:rgba(255,255,255,0.7);white-space:nowrap;margin-left:4px; }
+    .pf-art { flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden; }
+    .pf-art-bg { position:absolute;inset:0;opacity:0.18;background-size:40px 40px; }
+    .pf-emo { font-size:2.8rem;line-height:1;position:relative;z-index:1;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.6)); }
+    .pf-footer { padding:4px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:rgba(0,0,0,0.4);gap:4px; }
+    .pf-set { font-size:7px;color:rgba(255,255,255,0.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1; }
+    .pf-num { font-size:7px;color:rgba(255,255,255,0.4);white-space:nowrap; }
+    .pfh-fire      { background:linear-gradient(90deg,#b22222,#e74c3c); }
+    .pfh-water     { background:linear-gradient(90deg,#1a5f7a,#2980b9); }
+    .pfh-grass     { background:linear-gradient(90deg,#1e6b35,#27ae60); }
+    .pfh-electric  { background:linear-gradient(90deg,#b8860b,#f1c40f); }
+    .pfh-psychic   { background:linear-gradient(90deg,#6b2d8b,#9b59b6); }
+    .pfh-dark      { background:linear-gradient(90deg,#1a1a2e,#2c2c4a); }
+    .pfh-dragon    { background:linear-gradient(90deg,#1a237e,#3949ab); }
+    .pfh-fighting  { background:linear-gradient(90deg,#7b341e,#c0392b); }
+    .pfh-steel     { background:linear-gradient(90deg,#4a5568,#718096); }
+    .pfh-colorless { background:linear-gradient(90deg,#2d3748,#4a5568); }
+    .pfh-trainer   { background:linear-gradient(90deg,#1a3a1e,#2d6a4f); }
+    .pfbg-fire     { background-image:radial-gradient(circle,#e74c3c 1px,transparent 1px);background-color:#b22222; }
+    .pfbg-water    { background-image:radial-gradient(circle,#2980b9 1px,transparent 1px);background-color:#1a5f7a; }
+    .pfbg-grass    { background-image:radial-gradient(circle,#27ae60 1px,transparent 1px);background-color:#1e6b35; }
+    .pfbg-electric { background-image:radial-gradient(circle,#f1c40f 1px,transparent 1px);background-color:#b8860b; }
+    .pfbg-psychic  { background-image:radial-gradient(circle,#9b59b6 1px,transparent 1px);background-color:#6b2d8b; }
+    .pfbg-dark     { background-image:radial-gradient(circle,#4a4a6a 1px,transparent 1px);background-color:#1a1a2e; }
+    .pfbg-dragon   { background-image:radial-gradient(circle,#3949ab 1px,transparent 1px);background-color:#1a237e; }
+    .pfbg-fighting { background-image:radial-gradient(circle,#c0392b 1px,transparent 1px);background-color:#7b341e; }
+    .pfbg-steel    { background-image:radial-gradient(circle,#718096 1px,transparent 1px);background-color:#4a5568; }
+    .pfbg-colorless{ background-image:radial-gradient(circle,#666 1px,transparent 1px);background-color:#2d3748; }
+    .pfbg-trainer  { background-image:radial-gradient(circle,#2d6a4f 1px,transparent 1px);background-color:#1a3a1e; }
+    .card-slot.owned .pf-art::after { content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(255,215,0,0.22) 0%,transparent 70%);pointer-events:none; }
+    .card-slot.not-owned .pf-header,
+    .card-slot.not-owned .pf-art,
+    .card-slot.not-owned .pf-footer { filter:grayscale(80%) brightness(0.5); }
+    .own-badge { position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;z-index:5;border:2px solid;transition:all 0.2s; }
+    .own-badge.yes { background:rgba(255,215,0,0.9);border-color:#fff;color:#000; }
+    .own-badge.no  { background:rgba(30,30,50,0.85);border-color:#555;color:#555; }
+    .rarity-badge { font-size:9px;letter-spacing:0.5px;padding:2px 6px;border-radius:999px; }
+    .r-common    { background:#4a4a4a;color:#ccc; }
+    .r-uncommon  { background:#2d6a4f;color:#b7e4c7; }
+    .r-rare      { background:#1a3a8f;color:#90c5ff; }
+    .r-holo      { background:linear-gradient(90deg,#7928ca,#ff0080);color:#fff; }
+    .r-ultra     { background:linear-gradient(90deg,#f7971e,#ffd200);color:#000; }
+    .r-secret    { background:linear-gradient(90deg,#c0392b,#e74c3c);color:#fff; }
+    .r-ex        { background:linear-gradient(90deg,#1a1a2e,#16213e);color:#FFD700;border:1px solid #FFD700; }
+    .t-fire      { background:#c0392b22;color:#e74c3c;border:1px solid #e74c3c44; }
+    .t-water     { background:#1a5f7a22;color:#5dade2;border:1px solid #5dade244; }
+    .t-grass     { background:#1e844922;color:#58d68d;border:1px solid #58d68d44; }
+    .t-electric  { background:#d4ac0d22;color:#f4d03f;border:1px solid #f4d03f44; }
+    .t-psychic   { background:#7d3c9822;color:#c39bd3;border:1px solid #c39bd344; }
+    .t-dark      { background:#1c1c1c22;color:#aaaacc;border:1px solid #aaaacc44; }
+    .t-dragon    { background:#1a237e22;color:#7986cb;border:1px solid #7986cb44; }
+    .t-fighting  { background:#7b341e22;color:#e59866;border:1px solid #e5986644; }
+    .t-steel     { background:#5d6d7e22;color:#aab7c4;border:1px solid #aab7c444; }
+    .t-colorless { background:#2c2c3b22;color:#cccccc;border:1px solid #cccccc33; }
+    .t-trainer   { background:#1a2a1a22;color:#a8d8a8;border:1px solid #a8d8a844; }
+    .stat-card   { background:linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.08);border-radius:14px; }
+    .filter-btn  { transition:all 0.2s;border-radius:999px;font-weight:700;font-size:13px;padding:6px 18px;border:2px solid transparent;cursor:pointer; }
+    .filter-btn.active { border-color:#a855f7;background:rgba(168,85,247,0.15);color:#a855f7; }
+    .filter-btn:not(.active) { background:rgba(255,255,255,0.06);color:#aaa; }
+    .filter-btn:not(.active):hover { background:rgba(255,255,255,0.12);color:#fff; }
+    .nav-btn { width:44px;height:44px;border-radius:50%;background:rgba(168,85,247,0.15);border:2px solid #a855f7;color:#a855f7;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s; }
+    .nav-btn:hover { background:rgba(168,85,247,0.35); }
+    .nav-btn:disabled { opacity:0.25;cursor:not-allowed; }
+    .progress-bar-bg { background:rgba(255,255,255,0.08);border-radius:999px;overflow:hidden;height:8px; }
+    .progress-bar-fill { height:100%;border-radius:999px;background:linear-gradient(90deg,#7c3aed,#ec4899);transition:width 0.5s ease; }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+    .bounce { animation:bounce 0.9s infinite ease-in-out; }
+    @keyframes shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
+    .card-slot.owned:hover .card-img-wrap::after { content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,0.15) 50%,transparent 65%);background-size:200% 100%;animation:shimmer 1s infinite linear;pointer-events:none; }
+    .search-input { background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:999px;color:#fff;padding:8px 18px 8px 42px;width:100%;outline:none;transition:border 0.2s; }
+    .search-input:focus { border-color:#a855f7; }
+    .search-input::placeholder { color:#666; }
+    .poke-select { background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:999px;color:#fff;padding:8px 16px;outline:none;cursor:pointer; }
+    .poke-select option { background:#1a1a2e; }
+    .empty-state { text-align:center;padding:60px 20px;color:#555; }
+    .hist-row { display:flex;align-items:center;gap:13px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:11px 15px;margin-bottom:8px;transition:background 0.15s; }
+    .hist-row:hover { background:rgba(255,255,255,0.07); }
+    .hist-emo  { font-size:20px;flex-shrink:0; }
+    .hist-name { font-size:13px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .hist-meta { font-size:11px;color:rgba(255,255,255,0.35);margin-top:2px; }
+    .hist-rbadge { display:inline-block;font-size:8px;padding:1px 7px;border-radius:999px;font-weight:700;margin-left:4px;vertical-align:middle; }
+    .hist-time { font-size:10px;color:rgba(255,255,255,0.2);flex-shrink:0;text-align:right;white-space:nowrap; }
+    .hist-empty { text-align:center;color:rgba(255,255,255,0.18);font-size:12px;padding:20px 0 8px; }
+    .tooltip { position:relative; }
+    .tooltip:hover .tooltip-box { opacity:1;pointer-events:auto; }
+    .tooltip-box { opacity:0;pointer-events:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:rgba(10,10,20,0.95);border:1px solid #a855f7;color:#a855f7;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;white-space:nowrap;transition:opacity 0.2s;z-index:50; }
+    ::-webkit-scrollbar { width:6px; }
+    ::-webkit-scrollbar-track { background:#0d0d1f; }
+    ::-webkit-scrollbar-thumb { background:#3a3a6a;border-radius:3px; }
+  </style>
+</head>
+<body class="bg-poke">
+<div class="stars"></div>
+
+<div class="relative z-10 max-w-5xl mx-auto px-4 py-8">
+
+  <!-- HEADER -->
+  <header class="text-center mb-8">
+    <div class="mb-3">
+      <a href="index.html" class="inline-flex items-center gap-2 text-slate-400 hover:text-purple-400 transition-colors text-xs press" style="font-size:9px">← Home</a>
+    </div>
+    <div class="flex items-center justify-center gap-3 mb-2">
+      <span class="text-4xl bounce">🌸</span>
+      <h1 class="press text-purple-400 text-xl md:text-2xl leading-tight drop-shadow-[0_0_18px_rgba(168,85,247,0.6)]">
+        Mythical Island
+      </h1>
+      <span class="text-4xl bounce" style="animation-delay:0.15s">✨</span>
+    </div>
+    <p class="text-slate-400 text-sm mt-1">Pokémon TCG Pocket · A1a · 86 Cards · Dec 17, 2024</p>
+    <div class="flex justify-center gap-3 mt-3 text-xs text-slate-500">
+      <span>🌸 Mew Pack</span>
+    </div>
+  </header>
+
+  <!-- STATS -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <div class="stat-card p-4 text-center">
+      <div class="text-2xl font-black text-yellow-400" id="stat-owned">0</div>
+      <div class="text-xs text-slate-400 mt-1">Cards Owned</div>
+    </div>
+    <div class="stat-card p-4 text-center">
+      <div class="text-2xl font-black text-blue-400" id="stat-total">86</div>
+      <div class="text-xs text-slate-400 mt-1">Total Cards</div>
+      <div class="text-[10px] text-slate-600 mt-0.5">56 base · 30 secret</div>
+    </div>
+    <div class="stat-card p-4 text-center">
+      <div class="text-lg font-black text-green-400" id="stat-value">₱0</div>
+      <div class="text-xs text-slate-400 mt-1">Collection Value</div>
+    </div>
+    <div class="stat-card p-4 text-center">
+      <div class="text-2xl font-black text-purple-400" id="stat-pct">0%</div>
+      <div class="text-xs text-slate-400 mt-1">Completion</div>
+    </div>
+  </div>
+
+  <div class="progress-bar-bg mb-6">
+    <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="flex flex-wrap gap-3 items-center mb-6">
+    <div class="relative flex-1 min-w-[180px]">
+      <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+      <input id="search" type="text" class="search-input" placeholder="Search cards…" oninput="render()" />
+    </div>
+    <select id="type-filter" class="poke-select text-sm" onchange="render()">
+      <option value="">All Types</option>
+    </select>
+    <div class="flex gap-2">
+      <button class="filter-btn active" data-filter="all"       onclick="setFilter('all',this)">All</button>
+      <button class="filter-btn"        data-filter="owned"     onclick="setFilter('owned',this)">✅ Owned</button>
+      <button class="filter-btn"        data-filter="not-owned" onclick="setFilter('not-owned',this)">❌ Missing</button>
+    </div>
+    <select id="sort" class="poke-select text-sm" onchange="render()">
+      <option value="default">Sort: Default</option>
+      <option value="name">Name A–Z</option>
+      <option value="value-hi">Value ↑</option>
+      <option value="value-lo">Value ↓</option>
+    </select>
+  </div>
+
+  <!-- BINDER -->
+  <div class="binder-wrap p-4 md:p-6">
+    <div class="flex items-center gap-2 mb-5">
+      <div class="h-px flex-1 bg-gradient-to-r from-transparent to-purple-400/30"></div>
+      <span class="press text-purple-400 text-[9px] tracking-widest opacity-70">MYTHICAL ISLAND · A1a · 56 BASE + 30 SECRET</span>
+      <div class="h-px flex-1 bg-gradient-to-l from-transparent to-purple-400/30"></div>
+    </div>
+    <div class="flex items-center justify-between mb-4 text-slate-500 text-xs">
+      <span id="page-info">Page 1 / 1</span>
+      <span id="showing-info">Showing 0 cards</span>
+    </div>
+    <div class="flex gap-0">
+      <div class="binder-spine w-10 flex flex-col items-center justify-around py-4 rounded-l-xl" style="min-height:420px">
+        <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+        <div class="ring"></div><div class="ring"></div>
+      </div>
+      <div class="flex-1 min-w-0 pl-4">
+        <div id="card-grid" class="grid grid-cols-3 gap-4"></div>
+        <div id="empty-state" class="empty-state hidden">
+          <div class="text-5xl mb-4">😢</div>
+          <div class="text-slate-500 font-bold">No cards found</div>
+          <div class="text-slate-600 text-sm mt-1">Try adjusting your filters</div>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center justify-center gap-6 mt-6">
+      <button class="nav-btn" id="btn-prev" onclick="prevPage()" disabled>‹</button>
+      <div id="page-dots" class="flex gap-2"></div>
+      <button class="nav-btn" id="btn-next" onclick="nextPage()">›</button>
+    </div>
+  </div>
+
+  <div class="mt-6 flex flex-wrap gap-4 justify-center text-xs text-slate-500">
+    <span class="flex items-center gap-1"><span class="w-4 h-4 rounded-full bg-yellow-400/80 inline-block"></span> Owned</span>
+    <span class="flex items-center gap-1"><span class="w-4 h-4 rounded-full border border-slate-600 inline-block"></span> Missing</span>
+    <span class="flex items-center gap-1">💡 Click card to toggle owned</span>
+  </div>
+
+  <div class="mt-10">
+    <div class="press text-purple-400 text-center mb-4" style="font-size:9px;letter-spacing:2px;opacity:0.7">· RECENTLY ADDED ·</div>
+    <div id="binder-history-list"></div>
+  </div>
+
+  <footer class="text-center text-slate-700 text-xs mt-8">
+    Pokémon & Pokémon TCG Pocket are © Nintendo / Creatures Inc. / GAME FREAK · Fan project only
+  </footer>
+</div>
+
+<script>
+const ALL_CARDS = [
+  // ─── GRASS ───
+  { id:'a1a-1',  name:'Exeggcute',         set:'Mythical Island', num:'1',  rarity:'Common',      type:'Grass',    php:20  },
+  { id:'a1a-2',  name:'Exeggutor',         set:'Mythical Island', num:'2',  rarity:'Uncommon',    type:'Grass',    php:45  },
+  { id:'a1a-3',  name:'Exeggutor ex',      set:'Mythical Island', num:'3',  rarity:'Double Rare', type:'Grass',    php:950 },
+  { id:'a1a-4',  name:'Paras',             set:'Mythical Island', num:'4',  rarity:'Common',      type:'Grass',    php:20  },
+  { id:'a1a-5',  name:'Parasect',          set:'Mythical Island', num:'5',  rarity:'Uncommon',    type:'Grass',    php:40  },
+  { id:'a1a-6',  name:'Hoppip',            set:'Mythical Island', num:'6',  rarity:'Common',      type:'Grass',    php:20  },
+  { id:'a1a-7',  name:'Skiploom',          set:'Mythical Island', num:'7',  rarity:'Common',      type:'Grass',    php:20  },
+  { id:'a1a-8',  name:'Jumpluff',          set:'Mythical Island', num:'8',  rarity:'Rare',        type:'Grass',    php:150 },
+  // ─── FIRE ───
+  { id:'a1a-9',  name:'Rapidash',          set:'Mythical Island', num:'9',  rarity:'Uncommon',    type:'Fire',     php:45  },
+  { id:'a1a-10', name:'Ninetales ex',      set:'Mythical Island', num:'10', rarity:'Double Rare', type:'Fire',     php:1400},
+  { id:'a1a-11', name:'Magmar',            set:'Mythical Island', num:'11', rarity:'Common',      type:'Fire',     php:20  },
+  { id:'a1a-12', name:'Moltres',           set:'Mythical Island', num:'12', rarity:'Rare',        type:'Fire',     php:350 },
+  // ─── WATER ───
+  { id:'a1a-13', name:'Horsea',            set:'Mythical Island', num:'13', rarity:'Common',      type:'Water',    php:20  },
+  { id:'a1a-14', name:'Seadra',            set:'Mythical Island', num:'14', rarity:'Uncommon',    type:'Water',    php:40  },
+  { id:'a1a-15', name:'Kingdra ex',        set:'Mythical Island', num:'15', rarity:'Double Rare', type:'Water',    php:1100},
+  { id:'a1a-16', name:'Slowpoke',          set:'Mythical Island', num:'16', rarity:'Common',      type:'Water',    php:20  },
+  { id:'a1a-17', name:'Slowbro',           set:'Mythical Island', num:'17', rarity:'Uncommon',    type:'Water',    php:40  },
+  { id:'a1a-18', name:'Staryu',            set:'Mythical Island', num:'18', rarity:'Common',      type:'Water',    php:20  },
+  { id:'a1a-19', name:'Starmie ex',        set:'Mythical Island', num:'19', rarity:'Double Rare', type:'Water',    php:900 },
+  { id:'a1a-20', name:'Marill',            set:'Mythical Island', num:'20', rarity:'Common',      type:'Water',    php:20  },
+  { id:'a1a-21', name:'Azumarill',         set:'Mythical Island', num:'21', rarity:'Uncommon',    type:'Water',    php:40  },
+  // ─── ELECTRIC ───
+  { id:'a1a-22', name:'Pikachu',           set:'Mythical Island', num:'22', rarity:'Common',      type:'Electric', php:35  },
+  { id:'a1a-23', name:'Raichu',            set:'Mythical Island', num:'23', rarity:'Rare',        type:'Electric', php:180 },
+  { id:'a1a-24', name:'Mimikyu',           set:'Mythical Island', num:'24', rarity:'Common',      type:'Electric', php:20  },
+  // ─── PSYCHIC / MEW ───
+  { id:'a1a-25', name:'Mew ex',            set:'Mythical Island', num:'25', rarity:'Double Rare', type:'Psychic',  php:8500},
+  { id:'a1a-26', name:'Mew',              set:'Mythical Island', num:'26', rarity:'Rare',        type:'Psychic',  php:600 },
+  { id:'a1a-27', name:'Slowpoke',          set:'Mythical Island', num:'27', rarity:'Common',      type:'Psychic',  php:20  },
+  { id:'a1a-28', name:'Jigglypuff',        set:'Mythical Island', num:'28', rarity:'Common',      type:'Psychic',  php:20  },
+  { id:'a1a-29', name:'Wigglytuff ex',     set:'Mythical Island', num:'29', rarity:'Double Rare', type:'Psychic',  php:1200},
+  { id:'a1a-30', name:'Clefairy',          set:'Mythical Island', num:'30', rarity:'Common',      type:'Psychic',  php:20  },
+  { id:'a1a-31', name:'Clefable',          set:'Mythical Island', num:'31', rarity:'Rare',        type:'Psychic',  php:160 },
+  { id:'a1a-32', name:'Snubbull',          set:'Mythical Island', num:'32', rarity:'Common',      type:'Psychic',  php:20  },
+  { id:'a1a-33', name:'Granbull',          set:'Mythical Island', num:'33', rarity:'Uncommon',    type:'Psychic',  php:40  },
+  { id:'a1a-34', name:'Marill',            set:'Mythical Island', num:'34', rarity:'Common',      type:'Psychic',  php:20  },
+  { id:'a1a-35', name:'Togepi',            set:'Mythical Island', num:'35', rarity:'Common',      type:'Psychic',  php:20  },
+  { id:'a1a-36', name:'Togetic',           set:'Mythical Island', num:'36', rarity:'Uncommon',    type:'Psychic',  php:40  },
+  { id:'a1a-37', name:'Togekiss ex',       set:'Mythical Island', num:'37', rarity:'Double Rare', type:'Psychic',  php:2800},
+  // ─── DARK ───
+  { id:'a1a-38', name:'Persian',           set:'Mythical Island', num:'38', rarity:'Uncommon',    type:'Dark',     php:40  },
+  { id:'a1a-39', name:'Meowth',            set:'Mythical Island', num:'39', rarity:'Common',      type:'Dark',     php:20  },
+  // ─── FIGHTING ───
+  { id:'a1a-40', name:'Nidoran♀',         set:'Mythical Island', num:'40', rarity:'Common',      type:'Fighting', php:20  },
+  { id:'a1a-41', name:'Nidorina',          set:'Mythical Island', num:'41', rarity:'Uncommon',    type:'Fighting', php:40  },
+  { id:'a1a-42', name:'Nidoqueen ex',      set:'Mythical Island', num:'42', rarity:'Double Rare', type:'Fighting', php:850 },
+  // ─── COLORLESS ───
+  { id:'a1a-43', name:'Eevee',             set:'Mythical Island', num:'43', rarity:'Common',      type:'Colorless',php:30  },
+  { id:'a1a-44', name:'Chansey',           set:'Mythical Island', num:'44', rarity:'Common',      type:'Colorless',php:20  },
+  { id:'a1a-45', name:'Lickitung',         set:'Mythical Island', num:'45', rarity:'Common',      type:'Colorless',php:20  },
+  { id:'a1a-46', name:'Aipom',             set:'Mythical Island', num:'46', rarity:'Common',      type:'Colorless',php:20  },
+  { id:'a1a-47', name:'Girafarig',         set:'Mythical Island', num:'47', rarity:'Uncommon',    type:'Colorless',php:40  },
+  { id:'a1a-48', name:'Dunsparce',         set:'Mythical Island', num:'48', rarity:'Common',      type:'Colorless',php:20  },
+  // ─── TRAINERS ─── 
+  { id:'a1a-49', name:'Misty',             set:'Mythical Island', num:'49', rarity:'Uncommon',    type:'Trainer',  php:220 },
+  { id:'a1a-50', name:'Giovanni',          set:'Mythical Island', num:'50', rarity:'Uncommon',    type:'Trainer',  php:450 },
+  { id:'a1a-51', name:'Erika',             set:'Mythical Island', num:'51', rarity:'Uncommon',    type:'Trainer',  php:200 },
+  { id:'a1a-52', name:'Koga',              set:'Mythical Island', num:'52', rarity:'Uncommon',    type:'Trainer',  php:180 },
+  { id:'a1a-53', name:'Poké Ball',         set:'Mythical Island', num:'53', rarity:'Common',      type:'Trainer',  php:50  },
+  { id:'a1a-54', name:'Professor Research',set:'Mythical Island', num:'54', rarity:'Uncommon',    type:'Trainer',  php:120 },
+  { id:'a1a-55', name:'Mythical Slab',     set:'Mythical Island', num:'55', rarity:'Uncommon',    type:'Trainer',  php:100 },
+  { id:'a1a-56', name:'Wonder Wand',       set:'Mythical Island', num:'56', rarity:'Rare',        type:'Trainer',  php:350 },
+  // ─── ILLUSTRATION RARE ───
+  { id:'a1a-57', name:'Exeggutor ex IR',   set:'Mythical Island', num:'57', rarity:'Illus. Rare', type:'Grass',    php:1600},
+  { id:'a1a-58', name:'Ninetales ex IR',   set:'Mythical Island', num:'58', rarity:'Illus. Rare', type:'Fire',     php:3200},
+  { id:'a1a-59', name:'Mew ex IR',         set:'Mythical Island', num:'59', rarity:'Illus. Rare', type:'Psychic',  php:12000},
+  { id:'a1a-60', name:'Togekiss ex IR',    set:'Mythical Island', num:'60', rarity:'Illus. Rare', type:'Psychic',  php:5500},
+  { id:'a1a-61', name:'Wigglytuff ex IR',  set:'Mythical Island', num:'61', rarity:'Illus. Rare', type:'Psychic',  php:2800},
+  { id:'a1a-62', name:'Starmie ex IR',     set:'Mythical Island', num:'62', rarity:'Illus. Rare', type:'Water',    php:2000},
+  { id:'a1a-63', name:'Kingdra ex IR',     set:'Mythical Island', num:'63', rarity:'Illus. Rare', type:'Water',    php:2200},
+  { id:'a1a-64', name:'Erika IR',          set:'Mythical Island', num:'64', rarity:'Illus. Rare', type:'Trainer',  php:2800},
+  { id:'a1a-65', name:'Misty IR',          set:'Mythical Island', num:'65', rarity:'Illus. Rare', type:'Trainer',  php:3200},
+  // ─── ULTRA RARE ───
+  { id:'a1a-66', name:'Mew ex UR',         set:'Mythical Island', num:'66', rarity:'Ultra Rare',  type:'Psychic',  php:18000},
+  { id:'a1a-67', name:'Togekiss ex UR',    set:'Mythical Island', num:'67', rarity:'Ultra Rare',  type:'Psychic',  php:8500},
+  { id:'a1a-68', name:'Ninetales ex UR',   set:'Mythical Island', num:'68', rarity:'Ultra Rare',  type:'Fire',     php:6000},
+  { id:'a1a-69', name:'Exeggutor ex UR',   set:'Mythical Island', num:'69', rarity:'Ultra Rare',  type:'Grass',    php:4000},
+  { id:'a1a-70', name:'Kingdra ex UR',     set:'Mythical Island', num:'70', rarity:'Ultra Rare',  type:'Water',    php:3800},
+  // ─── SPECIAL ART ───
+  { id:'a1a-71', name:'Mew ex SAR',        set:'Mythical Island', num:'71', rarity:'Special Art', type:'Psychic',  php:32000},
+  { id:'a1a-72', name:'Togekiss ex SAR',   set:'Mythical Island', num:'72', rarity:'Special Art', type:'Psychic',  php:12000},
+  { id:'a1a-73', name:'Misty SAR',         set:'Mythical Island', num:'73', rarity:'Special Art', type:'Trainer',  php:8000},
+  { id:'a1a-74', name:'Erika SAR',         set:'Mythical Island', num:'74', rarity:'Special Art', type:'Trainer',  php:7000},
+  // ─── HYPER RARE (Gold) ───
+  { id:'a1a-75', name:'Mew ex Gold',       set:'Mythical Island', num:'75', rarity:'Hyper Rare',  type:'Psychic',  php:55000},
+  { id:'a1a-76', name:'Togekiss ex Gold',  set:'Mythical Island', num:'76', rarity:'Hyper Rare',  type:'Psychic',  php:25000},
+  { id:'a1a-77', name:'Ninetales ex Gold', set:'Mythical Island', num:'77', rarity:'Hyper Rare',  type:'Fire',     php:18000},
+  // ─── PROMO ───
+  { id:'a1a-78', name:'Mew Promo',         set:'Mythical Island', num:'78', rarity:'Illus. Rare', type:'Psychic',  php:4500},
+  { id:'a1a-79', name:'Pikachu Promo',     set:'Mythical Island', num:'79', rarity:'Rare',        type:'Electric', php:2500},
+  { id:'a1a-80', name:'Togetic Promo',     set:'Mythical Island', num:'80', rarity:'Rare',        type:'Psychic',  php:700 },
+  { id:'a1a-81', name:'Clefable Promo',    set:'Mythical Island', num:'81', rarity:'Rare',        type:'Psychic',  php:550 },
+  { id:'a1a-82', name:'Marill Promo',      set:'Mythical Island', num:'82', rarity:'Common',      type:'Water',    php:20  },
+  { id:'a1a-83', name:'Eevee Promo',       set:'Mythical Island', num:'83', rarity:'Illus. Rare', type:'Colorless',php:1800},
+  { id:'a1a-84', name:'Meowth Promo',      set:'Mythical Island', num:'84', rarity:'Rare',        type:'Dark',     php:400 },
+  { id:'a1a-85', name:'Jumpluff Promo',    set:'Mythical Island', num:'85', rarity:'Rare',        type:'Grass',    php:500 },
+  { id:'a1a-86', name:'Parasect Promo',    set:'Mythical Island', num:'86', rarity:'Uncommon',    type:'Grass',    php:40  },
+];
+
+const RARITY_CLASS = {
+  'Common':'r-common','Uncommon':'r-uncommon','Rare':'r-rare',
+  'Double Rare':'r-ultra','Illus. Rare':'r-holo','Ultra Rare':'r-ultra',
+  'Special Art':'r-secret','Hyper Rare':'r-ex',
+};
+const TYPE_CLASS = {
+  Fire:'t-fire',Water:'t-water',Grass:'t-grass',Electric:'t-electric',
+  Psychic:'t-psychic',Dark:'t-dark',Dragon:'t-dragon',Fighting:'t-fighting',
+  Steel:'t-steel',Colorless:'t-colorless',Trainer:'t-trainer',
+};
+const TYPE_EMO = {
+  Fire:'🔥',Water:'💧',Grass:'🌿',Electric:'⚡',Psychic:'🔮',
+  Dark:'🌑',Dragon:'🐉',Fighting:'🥊',Steel:'⚙️',Colorless:'⭐',Trainer:'🃏',
+};
+
+let owned = {};
+let currentPage = 0;
+let currentFilter = 'all';
+const CARDS_PER_PAGE = 6;
+
+function loadOwned() {
+  try { owned = JSON.parse(localStorage.getItem('poke_owned') || '{}'); } catch(e) { owned = {}; }
+}
+function saveOwned() {
+  localStorage.setItem('poke_owned', JSON.stringify(owned));
+}
+function setFilter(f,btn) {
+  currentFilter = f; currentPage = 0;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+function getFiltered() {
+  const q  = document.getElementById('search').value.trim().toLowerCase();
+  const tf = document.getElementById('type-filter').value;
+  const sv = document.getElementById('sort').value;
+  let cards = ALL_CARDS.filter(c => {
+    const io = !!owned[c.id];
+    if (currentFilter === 'owned'     && !io) return false;
+    if (currentFilter === 'not-owned' &&  io) return false;
+    if (q  && !c.name.toLowerCase().includes(q)) return false;
+    if (tf && c.type !== tf) return false;
+    return true;
+  });
+  if (sv === 'name')     cards.sort((a,b)=>a.name.localeCompare(b.name));
+  if (sv === 'value-hi') cards.sort((a,b)=>b.php - a.php);
+  if (sv === 'value-lo') cards.sort((a,b)=>a.php - b.php);
+  return cards;
+}
+function toggleOwned(id) {
+  owned[id] = !owned[id];
+  if (!owned[id]) { delete owned[id]; }
+  else {
+    const card = ALL_CARDS.find(c => c.id === id);
+    if (card) {
+      let hist = [];
+      try { hist = JSON.parse(localStorage.getItem('poke_history') || '[]'); } catch(e) {}
+      hist.unshift({ id:card.id, name:card.name, set:card.set, rarity:card.rarity, type:card.type, php:card.php, ts:Date.now(), src:'binder' });
+      if (hist.length > 30) hist = hist.slice(0, 30);
+      localStorage.setItem('poke_history', JSON.stringify(hist));
+    }
+  }
+  saveOwned();
+  render();
+  renderHistory();
+}
+function imgUrl(card) {
+  return `https://images.pokemontcg.io/a1a/${card.num}.png`;
+}
+function cardFacePlaceholder(card) {
+  const t = (card.type || 'colorless').toLowerCase();
+  const emo = TYPE_EMO[card.type] || '⭐';
+  const hpMap = { 'Common':60,'Uncommon':80,'Rare':110,'Double Rare':240,'Ultra Rare':280,'Illus. Rare':240,'Special Art':280,'Hyper Rare':330,'Trainer':null };
+  const hp = hpMap[card.rarity];
+  const hpStr = hp ? `<span class="pf-hp">${hp} HP</span>` : '';
+  return `<div class="card-face-placeholder">
+    <div class="pf-header pfh-${t}"><span class="pf-header-name">${card.name}</span>${hpStr}</div>
+    <div class="pf-art"><div class="pf-art-bg pfbg-${t}"></div><span class="pf-emo">${emo}</span></div>
+    <div class="pf-footer"><span class="pf-set">${card.set}</span><span class="pf-num">#${card.num}</span></div>
+  </div>`;
+}
+function cardHTML(card) {
+  const isOwned = !!owned[card.id];
+  const rarClass = RARITY_CLASS[card.rarity] || 'r-common';
+  const typeClass = TYPE_CLASS[card.type] || 't-colorless';
+  const typeEmo  = TYPE_EMO[card.type] || '⭐';
+  return `<div class="card-slot ${isOwned?'owned':'not-owned'} tooltip" onclick="toggleOwned('${card.id}')" title="Click to toggle owned">
+    <div class="tooltip-box">${isOwned?'Mark as missing':'Mark as owned'}</div>
+    <div class="card-frame">
+      <div class="card-img-wrap" style="position:relative">
+        <img src="${imgUrl(card)}" alt="${card.name}" loading="lazy"
+          onerror="this.classList.add('hidden');this.nextElementSibling.style.display='flex';" style="display:block"/>
+        <div style="display:none;position:absolute;inset:0">${cardFacePlaceholder(card)}</div>
+        <div class="own-badge ${isOwned?'yes':'no'}" style="position:absolute;top:6px;right:6px">${isOwned?'✓':'+'}</div>
+      </div>
+      <div class="p-2">
+        <div class="text-white font-black text-xs leading-tight truncate">${card.name}</div>
+        <div class="text-slate-400 text-[10px] truncate">🌸 Mew Pack · #${card.num}</div>
+        <div class="flex items-center justify-between mt-1 flex-wrap gap-1">
+          <span class="rarity-badge ${rarClass}">${card.rarity}</span>
+          <span class="text-[10px] font-bold text-green-400">₱${card.php.toLocaleString('en-PH')}</span>
+        </div>
+        <div class="mt-1"><span class="text-[10px] px-2 py-0.5 rounded-full ${typeClass}">${typeEmo} ${card.type}</span></div>
+      </div>
+    </div>
+  </div>`;
+}
+function buildDots(total, cur) {
+  const dots = document.getElementById('page-dots');
+  dots.innerHTML = '';
+  const max = Math.min(total, 7);
+  for (let i = 0; i < max; i++) {
+    const d = document.createElement('div');
+    d.className = `w-2 h-2 rounded-full transition-all cursor-pointer ${i===cur?'bg-purple-400 scale-125':'bg-slate-600 hover:bg-slate-400'}`;
+    const pg = i;
+    d.onclick = () => { currentPage = pg; render(); };
+    dots.appendChild(d);
+  }
+  if (total > 7) { const sp = document.createElement('span'); sp.className='text-slate-500 text-xs'; sp.textContent=`…${total}`; dots.appendChild(sp); }
+}
+function render() {
+  const filtered = getFiltered();
+  const totalPages = Math.max(1, Math.ceil(filtered.length / CARDS_PER_PAGE));
+  if (currentPage >= totalPages) currentPage = totalPages - 1;
+  const start = currentPage * CARDS_PER_PAGE;
+  const page  = filtered.slice(start, start + CARDS_PER_PAGE);
+  const grid  = document.getElementById('card-grid');
+  const empty = document.getElementById('empty-state');
+  if (!filtered.length) { grid.innerHTML=''; empty.classList.remove('hidden'); }
+  else { empty.classList.add('hidden'); grid.innerHTML = page.map(cardHTML).join(''); }
+  document.getElementById('page-info').textContent    = `Page ${currentPage+1} / ${totalPages}`;
+  document.getElementById('showing-info').textContent = `${filtered.length} card${filtered.length!==1?'s':''} found`;
+  document.getElementById('btn-prev').disabled = currentPage === 0;
+  document.getElementById('btn-next').disabled = currentPage >= totalPages - 1;
+  buildDots(totalPages, currentPage);
+  const ownedCount = ALL_CARDS.filter(c=>owned[c.id]).length;
+  const totalValue = ALL_CARDS.filter(c=>owned[c.id]).reduce((s,c)=>s+c.php,0);
+  const pct = Math.round(ownedCount / ALL_CARDS.length * 100);
+  document.getElementById('stat-owned').textContent = ownedCount;
+  document.getElementById('stat-total').textContent = ALL_CARDS.length;
+  document.getElementById('stat-value').textContent = '₱' + totalValue.toLocaleString('en-PH');
+  document.getElementById('stat-pct').textContent   = pct + '%';
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+function prevPage() { if (currentPage > 0) { currentPage--; render(); } }
+function nextPage() {
+  const totalPages = Math.ceil(getFiltered().length / CARDS_PER_PAGE);
+  if (currentPage < totalPages - 1) { currentPage++; render(); }
+}
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowLeft') prevPage();
+  if (e.key==='ArrowRight') nextPage();
+});
+function buildDropdowns() {
+  const types = [...new Set(ALL_CARDS.map(c=>c.type))].sort();
+  const typeEl = document.getElementById('type-filter');
+  types.forEach(t => { const o=document.createElement('option'); o.value=t; o.textContent=t; typeEl.appendChild(o); });
+}
+function renderHistory() {
+  const RAR_STYLE = {'Common':'background:#3f3f46;color:#a1a1aa','Uncommon':'background:#064e3b;color:#6ee7b7','Rare':'background:#1e3a8a;color:#93c5fd','Double Rare':'background:#78350f;color:#fcd34d','Illus. Rare':'background:#4a044e;color:#e879f9','Ultra Rare':'background:#7c2d12;color:#fb923c','Special Art':'background:#7f1d1d;color:#fca5a5','Hyper Rare':'background:#1e1b4b;color:#a5b4fc'};
+  function timeAgo(ts) { const s=Math.floor((Date.now()-ts)/1000); if(s<60)return'just now'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+  let hist = [];
+  try { hist = JSON.parse(localStorage.getItem('poke_history')||'[]'); } catch(e) {}
+  const setHist = hist.filter(h=>h.set==='Mythical Island').slice(0,10);
+  const el = document.getElementById('binder-history-list');
+  if (!setHist.length) { el.innerHTML='<div class="hist-empty">No cards added yet — click a card to mark it owned!</div>'; return; }
+  el.innerHTML = setHist.map(h => {
+    const emo=TYPE_EMO[h.type]||'⭐'; const rs=RAR_STYLE[h.rarity]||'background:#3f3f46;color:#a1a1aa';
+    return `<div class="hist-row"><span class="hist-emo">${emo}</span><div style="flex:1;min-width:0"><div class="hist-name">${h.name}</div><div class="hist-meta">${h.set}<span class="hist-rbadge" style="${rs}">${h.rarity}</span> · ₱${h.php.toLocaleString('en-PH')}</div></div><span class="hist-time">${timeAgo(h.ts)}</span></div>`;
+  }).join('');
+}
+loadOwned();
+buildDropdowns();
+render();
+renderHistory();
+</script>
+</body>
+</html>

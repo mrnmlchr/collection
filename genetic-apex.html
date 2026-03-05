@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Genetic Apex · Pokémon TCG Pocket Binder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root { --gold:#FFD700; --red:#CC0000; --blue:#3B4CCA; }
+    body { font-family:'Nunito',sans-serif; }
+    .bg-poke { background:radial-gradient(ellipse at top,#0d1b3e 0%,#1a1a2e 55%,#0a0a18 100%); min-height:100vh; }
+    .press { font-family:'Press Start 2P',cursive; }
+    .stars { position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;
+      background-image:
+        radial-gradient(1px 1px at 10% 15%,rgba(255,255,255,0.5) 0%,transparent 80%),
+        radial-gradient(1px 1px at 30% 60%,rgba(255,255,255,0.4) 0%,transparent 80%),
+        radial-gradient(1px 1px at 55% 25%,rgba(255,255,255,0.6) 0%,transparent 80%),
+        radial-gradient(1px 1px at 70% 80%,rgba(255,255,255,0.3) 0%,transparent 80%),
+        radial-gradient(1px 1px at 85% 40%,rgba(255,255,255,0.5) 0%,transparent 80%),
+        radial-gradient(1px 1px at 20% 90%,rgba(255,255,255,0.3) 0%,transparent 80%),
+        radial-gradient(1px 1px at 60% 50%,rgba(255,255,255,0.2) 0%,transparent 80%),
+        radial-gradient(1px 1px at 75% 5%, rgba(255,255,255,0.6) 0%,transparent 80%); }
+    .binder-wrap { background:linear-gradient(135deg,#1c1c2a,#252535);border:3px solid #3a3a5c;border-radius:18px;box-shadow:0 0 60px rgba(220,38,38,0.2),inset 0 1px 0 rgba(255,255,255,0.05); }
+    .binder-spine { background:linear-gradient(180deg,#1a1a2e,#0d0d1f);border-right:3px solid #3a3a5c;box-shadow:inset -4px 0 12px rgba(0,0,0,0.5);position:relative; }
+    .ring { width:28px;height:28px;border-radius:50%;border:4px solid #4a4a6a;background:radial-gradient(circle at 35% 35%,#8a8aaa,#3a3a5a);box-shadow:0 2px 4px rgba(0,0,0,0.6),inset 0 1px 2px rgba(255,255,255,0.15);position:relative;z-index:2; }
+    .ring::after { content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:#1a1a2e;box-shadow:inset 0 1px 3px rgba(0,0,0,0.8); }
+    .card-slot { transition:transform 0.25s ease,box-shadow 0.25s ease;cursor:pointer;user-select:none; }
+    .card-slot:hover { transform:translateY(-6px) scale(1.03); }
+    .card-slot.owned { box-shadow:0 0 18px rgba(255,215,0,0.55),0 0 6px rgba(255,215,0,0.3); }
+    .card-frame { background:linear-gradient(135deg,#2a2a45,#1e1e35);border:2px solid #3a3a6a;border-radius:12px;overflow:hidden;position:relative; }
+    .card-slot.owned .card-frame { border-color:#FFD700; }
+    .card-img-wrap { background:#111120;overflow:hidden;position:relative; }
+    .card-img-wrap img { width:100%;aspect-ratio:63/88;object-fit:cover;display:block;transition:filter 0.3s; }
+    .card-img-wrap img.hidden { display:none; }
+    .card-face-placeholder { width:100%;aspect-ratio:63/88;display:flex;flex-direction:column;overflow:hidden;border-radius:8px 8px 0 0;background:#1a1a2e;font-family:'Nunito',sans-serif; }
+    .pf-header { padding:6px 8px 4px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0; }
+    .pf-header-name { font-size:9px;font-weight:900;color:#fff;line-height:1.1;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .pf-hp { font-size:8px;font-weight:900;color:rgba(255,255,255,0.7);white-space:nowrap;margin-left:4px; }
+    .pf-art { flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden; }
+    .pf-art-bg { position:absolute;inset:0;opacity:0.18;background-size:40px 40px; }
+    .pf-emo { font-size:2.8rem;line-height:1;position:relative;z-index:1;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.6)); }
+    .pf-footer { padding:4px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:rgba(0,0,0,0.4);gap:4px; }
+    .pf-set { font-size:7px;color:rgba(255,255,255,0.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1; }
+    .pf-num { font-size:7px;color:rgba(255,255,255,0.4);white-space:nowrap; }
+    .pfh-fire      { background:linear-gradient(90deg,#b22222,#e74c3c); }
+    .pfh-water     { background:linear-gradient(90deg,#1a5f7a,#2980b9); }
+    .pfh-grass     { background:linear-gradient(90deg,#1e6b35,#27ae60); }
+    .pfh-electric  { background:linear-gradient(90deg,#b8860b,#f1c40f); }
+    .pfh-psychic   { background:linear-gradient(90deg,#6b2d8b,#9b59b6); }
+    .pfh-dark      { background:linear-gradient(90deg,#1a1a2e,#2c2c4a); }
+    .pfh-dragon    { background:linear-gradient(90deg,#1a237e,#3949ab); }
+    .pfh-fighting  { background:linear-gradient(90deg,#7b341e,#c0392b); }
+    .pfh-steel     { background:linear-gradient(90deg,#4a5568,#718096); }
+    .pfh-colorless { background:linear-gradient(90deg,#2d3748,#4a5568); }
+    .pfh-trainer   { background:linear-gradient(90deg,#1a3a1e,#2d6a4f); }
+    .pfbg-fire     { background-image:radial-gradient(circle,#e74c3c 1px,transparent 1px);background-color:#b22222; }
+    .pfbg-water    { background-image:radial-gradient(circle,#2980b9 1px,transparent 1px);background-color:#1a5f7a; }
+    .pfbg-grass    { background-image:radial-gradient(circle,#27ae60 1px,transparent 1px);background-color:#1e6b35; }
+    .pfbg-electric { background-image:radial-gradient(circle,#f1c40f 1px,transparent 1px);background-color:#b8860b; }
+    .pfbg-psychic  { background-image:radial-gradient(circle,#9b59b6 1px,transparent 1px);background-color:#6b2d8b; }
+    .pfbg-dark     { background-image:radial-gradient(circle,#4a4a6a 1px,transparent 1px);background-color:#1a1a2e; }
+    .pfbg-dragon   { background-image:radial-gradient(circle,#3949ab 1px,transparent 1px);background-color:#1a237e; }
+    .pfbg-fighting { background-image:radial-gradient(circle,#c0392b 1px,transparent 1px);background-color:#7b341e; }
+    .pfbg-steel    { background-image:radial-gradient(circle,#718096 1px,transparent 1px);background-color:#4a5568; }
+    .pfbg-colorless{ background-image:radial-gradient(circle,#666 1px,transparent 1px);background-color:#2d3748; }
+    .pfbg-trainer  { background-image:radial-gradient(circle,#2d6a4f 1px,transparent 1px);background-color:#1a3a1e; }
+    .card-slot.owned .pf-art::after { content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(255,215,0,0.22) 0%,transparent 70%);pointer-events:none; }
+    .card-slot.not-owned .pf-header,
+    .card-slot.not-owned .pf-art,
+    .card-slot.not-owned .pf-footer { filter:grayscale(80%) brightness(0.5); }
+    .own-badge { position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;z-index:5;border:2px solid;transition:all 0.2s; }
+    .own-badge.yes { background:rgba(255,215,0,0.9);border-color:#fff;color:#000; }
+    .own-badge.no  { background:rgba(30,30,50,0.85);border-color:#555;color:#555; }
+    .rarity-badge { font-size:9px;letter-spacing:0.5px;padding:2px 6px;border-radius:999px; }
+    .r-common    { background:#4a4a4a;color:#ccc; }
+    .r-uncommon  { background:#2d6a4f;color:#b7e4c7; }
+    .r-rare      { background:#1a3a8f;color:#90c5ff; }
+    .r-holo      { background:linear-gradient(90deg,#7928ca,#ff0080);color:#fff; }
+    .r-ultra     { background:linear-gradient(90deg,#f7971e,#ffd200);color:#000; }
+    .r-secret    { background:linear-gradient(90deg,#c0392b,#e74c3c);color:#fff; }
+    .r-ex        { background:linear-gradient(90deg,#1a1a2e,#16213e);color:#FFD700;border:1px solid #FFD700; }
+    .t-fire      { background:#c0392b22;color:#e74c3c;border:1px solid #e74c3c44; }
+    .t-water     { background:#1a5f7a22;color:#5dade2;border:1px solid #5dade244; }
+    .t-grass     { background:#1e844922;color:#58d68d;border:1px solid #58d68d44; }
+    .t-electric  { background:#d4ac0d22;color:#f4d03f;border:1px solid #f4d03f44; }
+    .t-psychic   { background:#7d3c9822;color:#c39bd3;border:1px solid #c39bd344; }
+    .t-dark      { background:#1c1c1c22;color:#aaaacc;border:1px solid #aaaacc44; }
+    .t-dragon    { background:#1a237e22;color:#7986cb;border:1px solid #7986cb44; }
+    .t-fighting  { background:#7b341e22;color:#e59866;border:1px solid #e5986644; }
+    .t-steel     { background:#5d6d7e22;color:#aab7c4;border:1px solid #aab7c444; }
+    .t-colorless { background:#2c2c3b22;color:#cccccc;border:1px solid #cccccc33; }
+    .t-trainer   { background:#1a2a1a22;color:#a8d8a8;border:1px solid #a8d8a844; }
+    .stat-card   { background:linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.08);border-radius:14px; }
+    .filter-btn  { transition:all 0.2s;border-radius:999px;font-weight:700;font-size:13px;padding:6px 18px;border:2px solid transparent;cursor:pointer; }
+    .filter-btn.active { border-color:#FFD700;background:rgba(255,215,0,0.15);color:#FFD700; }
+    .filter-btn:not(.active) { background:rgba(255,255,255,0.06);color:#aaa; }
+    .filter-btn:not(.active):hover { background:rgba(255,255,255,0.12);color:#fff; }
+    .nav-btn { width:44px;height:44px;border-radius:50%;background:rgba(220,38,38,0.15);border:2px solid #dc2626;color:#dc2626;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s; }
+    .nav-btn:hover { background:rgba(220,38,38,0.35); }
+    .nav-btn:disabled { opacity:0.25;cursor:not-allowed; }
+    .progress-bar-bg { background:rgba(255,255,255,0.08);border-radius:999px;overflow:hidden;height:8px; }
+    .progress-bar-fill { height:100%;border-radius:999px;background:linear-gradient(90deg,#dc2626,#f59e0b);transition:width 0.5s ease; }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+    .bounce { animation:bounce 0.9s infinite ease-in-out; }
+    @keyframes shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
+    .card-slot.owned:hover .card-img-wrap::after { content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,0.15) 50%,transparent 65%);background-size:200% 100%;animation:shimmer 1s infinite linear;pointer-events:none; }
+    .search-input { background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:999px;color:#fff;padding:8px 18px 8px 42px;width:100%;outline:none;transition:border 0.2s; }
+    .search-input:focus { border-color:#FFD700; }
+    .search-input::placeholder { color:#666; }
+    .poke-select { background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:999px;color:#fff;padding:8px 16px;outline:none;cursor:pointer; }
+    .poke-select option { background:#1a1a2e; }
+    .empty-state { text-align:center;padding:60px 20px;color:#555; }
+    .hist-row { display:flex;align-items:center;gap:13px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:11px 15px;margin-bottom:8px;transition:background 0.15s; }
+    .hist-row:hover { background:rgba(255,255,255,0.07); }
+    .hist-emo  { font-size:20px;flex-shrink:0; }
+    .hist-name { font-size:13px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .hist-meta { font-size:11px;color:rgba(255,255,255,0.35);margin-top:2px; }
+    .hist-rbadge { display:inline-block;font-size:8px;padding:1px 7px;border-radius:999px;font-weight:700;margin-left:4px;vertical-align:middle; }
+    .hist-src  { font-size:15px;flex-shrink:0; }
+    .hist-time { font-size:10px;color:rgba(255,255,255,0.2);flex-shrink:0;text-align:right;white-space:nowrap; }
+    .hist-empty { text-align:center;color:rgba(255,255,255,0.18);font-size:12px;padding:20px 0 8px; }
+    .tooltip { position:relative; }
+    .tooltip:hover .tooltip-box { opacity:1;pointer-events:auto; }
+    .tooltip-box { opacity:0;pointer-events:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:rgba(10,10,20,0.95);border:1px solid #FFD700;color:#FFD700;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;white-space:nowrap;transition:opacity 0.2s;z-index:50; }
+    ::-webkit-scrollbar { width:6px; }
+    ::-webkit-scrollbar-track { background:#0d0d1f; }
+    ::-webkit-scrollbar-thumb { background:#3a3a6a;border-radius:3px; }
+  </style>
+</head>
+<body class="bg-poke">
+<div class="stars"></div>
+
+<div class="relative z-10 max-w-5xl mx-auto px-4 py-8">
+
+  <!-- HEADER -->
+  <header class="text-center mb-8">
+    <div class="mb-3">
+      <a href="index.html" class="inline-flex items-center gap-2 text-slate-400 hover:text-yellow-400 transition-colors text-xs press" style="font-size:9px">← Home</a>
+    </div>
+    <div class="flex items-center justify-center gap-3 mb-2">
+      <span class="text-4xl bounce">🧬</span>
+      <h1 class="press text-red-400 text-xl md:text-2xl leading-tight drop-shadow-[0_0_18px_rgba(220,38,38,0.6)]">
+        Genetic Apex
+      </h1>
+      <span class="text-4xl bounce" style="animation-delay:0.15s">🧬</span>
+    </div>
+    <p class="text-slate-400 text-sm mt-1">Pokémon TCG Pocket · A1 · 226 Cards · Oct 30, 2024</p>
+    <div class="flex justify-center gap-3 mt-3 text-xs text-slate-500">
+      <span>🔴 Charizard Pack</span>
+      <span>·</span>
+      <span>🟣 Mewtwo Pack</span>
+      <span>·</span>
+      <span>🟡 Pikachu Pack</span>
+    </div>
+  </header>
+
+  <!-- STATS -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <div class="stat-card p-4 text-center">
+      <div class="text-2xl font-black text-yellow-400" id="stat-owned">0</div>
+      <div class="text-xs text-slate-400 mt-1">Cards Owned</div>
+    </div>
+    <div class="stat-card p-4 text-center">
+      <div class="text-2xl font-black text-blue-400" id="stat-total">226</div>
+      <div class="text-xs text-slate-400 mt-1">Total Cards</div>
+      <div class="text-[10px] text-slate-600 mt-0.5">150 base · 76 secret</div>
+    </div>
+    <div class="stat-card p-4 text-center">
+      <div class="text-lg font-black text-green-400" id="stat-value">₱0</div>
+      <div class="text-xs text-slate-400 mt-1">Collection Value</div>
+    </div>
+    <div class="stat-card p-4 text-center">
+      <div class="text-2xl font-black text-purple-400" id="stat-pct">0%</div>
+      <div class="text-xs text-slate-400 mt-1">Completion</div>
+    </div>
+  </div>
+
+  <div class="progress-bar-bg mb-6">
+    <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="flex flex-wrap gap-3 items-center mb-6">
+    <div class="relative flex-1 min-w-[180px]">
+      <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+      <input id="search" type="text" class="search-input" placeholder="Search cards…" oninput="render()" />
+    </div>
+    <select id="pack-filter" class="poke-select text-sm" onchange="render()">
+      <option value="">All Packs</option>
+      <option value="Charizard">🔴 Charizard</option>
+      <option value="Mewtwo">🟣 Mewtwo</option>
+      <option value="Pikachu">🟡 Pikachu</option>
+      <option value="All Packs">✨ All Packs</option>
+    </select>
+    <select id="type-filter" class="poke-select text-sm" onchange="render()">
+      <option value="">All Types</option>
+    </select>
+    <div class="flex gap-2">
+      <button class="filter-btn active" data-filter="all"       onclick="setFilter('all',this)">All</button>
+      <button class="filter-btn"        data-filter="owned"     onclick="setFilter('owned',this)">✅ Owned</button>
+      <button class="filter-btn"        data-filter="not-owned" onclick="setFilter('not-owned',this)">❌ Missing</button>
+    </div>
+    <select id="sort" class="poke-select text-sm" onchange="render()">
+      <option value="default">Sort: Default</option>
+      <option value="name">Name A–Z</option>
+      <option value="value-hi">Value ↑</option>
+      <option value="value-lo">Value ↓</option>
+    </select>
+  </div>
+
+  <!-- BINDER -->
+  <div class="binder-wrap p-4 md:p-6">
+    <div class="flex items-center gap-2 mb-5">
+      <div class="h-px flex-1 bg-gradient-to-r from-transparent to-red-400/30"></div>
+      <span class="press text-red-400 text-[9px] tracking-widest opacity-70">GENETIC APEX · A1 · 150 BASE + 76 SECRET</span>
+      <div class="h-px flex-1 bg-gradient-to-l from-transparent to-red-400/30"></div>
+    </div>
+    <div class="flex items-center justify-between mb-4 text-slate-500 text-xs">
+      <span id="page-info">Page 1 / 1</span>
+      <span id="showing-info">Showing 0 cards</span>
+    </div>
+    <div class="flex gap-0">
+      <div class="binder-spine w-10 flex flex-col items-center justify-around py-4 rounded-l-xl" style="min-height:420px">
+        <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+        <div class="ring"></div><div class="ring"></div>
+      </div>
+      <div class="flex-1 min-w-0 pl-4">
+        <div id="card-grid" class="grid grid-cols-3 gap-4"></div>
+        <div id="empty-state" class="empty-state hidden">
+          <div class="text-5xl mb-4">😢</div>
+          <div class="text-slate-500 font-bold">No cards found</div>
+          <div class="text-slate-600 text-sm mt-1">Try adjusting your filters</div>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center justify-center gap-6 mt-6">
+      <button class="nav-btn" id="btn-prev" onclick="prevPage()" disabled>‹</button>
+      <div id="page-dots" class="flex gap-2"></div>
+      <button class="nav-btn" id="btn-next" onclick="nextPage()">›</button>
+    </div>
+  </div>
+
+  <div class="mt-6 flex flex-wrap gap-4 justify-center text-xs text-slate-500">
+    <span class="flex items-center gap-1"><span class="w-4 h-4 rounded-full bg-yellow-400/80 inline-block"></span> Owned</span>
+    <span class="flex items-center gap-1"><span class="w-4 h-4 rounded-full border border-slate-600 inline-block"></span> Missing</span>
+    <span class="flex items-center gap-1">💡 Click card to toggle owned</span>
+  </div>
+
+  <div class="mt-10">
+    <div class="press text-red-400 text-center mb-4" style="font-size:9px;letter-spacing:2px;opacity:0.7">· RECENTLY ADDED ·</div>
+    <div id="binder-history-list"></div>
+  </div>
+
+  <footer class="text-center text-slate-700 text-xs mt-8">
+    Pokémon & Pokémon TCG Pocket are © Nintendo / Creatures Inc. / GAME FREAK · Fan project only
+  </footer>
+</div>
+
+<script>
+const ALL_CARDS = [
+  // ─── GRASS ───
+  { id:'a1-1',   name:'Bulbasaur',         set:'Genetic Apex', num:'1',   rarity:'Common',      type:'Grass',    pack:'Mewtwo',    php:20  },
+  { id:'a1-2',   name:'Ivysaur',           set:'Genetic Apex', num:'2',   rarity:'Uncommon',    type:'Grass',    pack:'Mewtwo',    php:40  },
+  { id:'a1-3',   name:'Venusaur',          set:'Genetic Apex', num:'3',   rarity:'Rare',        type:'Grass',    pack:'Mewtwo',    php:200 },
+  { id:'a1-4',   name:'Venusaur ex',       set:'Genetic Apex', num:'4',   rarity:'Double Rare', type:'Grass',    pack:'Mewtwo',    php:950 },
+  { id:'a1-5',   name:'Caterpie',          set:'Genetic Apex', num:'5',   rarity:'Common',      type:'Grass',    pack:'Pikachu',   php:20  },
+  { id:'a1-6',   name:'Metapod',           set:'Genetic Apex', num:'6',   rarity:'Common',      type:'Grass',    pack:'Pikachu',   php:20  },
+  { id:'a1-7',   name:'Butterfree',        set:'Genetic Apex', num:'7',   rarity:'Rare',        type:'Grass',    pack:'Pikachu',   php:160 },
+  { id:'a1-8',   name:'Oddish',            set:'Genetic Apex', num:'8',   rarity:'Common',      type:'Grass',    pack:'Mewtwo',    php:20  },
+  { id:'a1-9',   name:'Gloom',             set:'Genetic Apex', num:'9',   rarity:'Uncommon',    type:'Grass',    pack:'Mewtwo',    php:40  },
+  { id:'a1-10',  name:'Vileplume',         set:'Genetic Apex', num:'10',  rarity:'Rare',        type:'Grass',    pack:'Mewtwo',    php:150 },
+  { id:'a1-11',  name:'Bellsprout',        set:'Genetic Apex', num:'11',  rarity:'Common',      type:'Grass',    pack:'Mewtwo',    php:20  },
+  { id:'a1-12',  name:'Weepinbell',        set:'Genetic Apex', num:'12',  rarity:'Uncommon',    type:'Grass',    pack:'Mewtwo',    php:40  },
+  { id:'a1-13',  name:'Victreebel',        set:'Genetic Apex', num:'13',  rarity:'Rare',        type:'Grass',    pack:'Mewtwo',    php:150 },
+  { id:'a1-14',  name:'Tangela',           set:'Genetic Apex', num:'14',  rarity:'Common',      type:'Grass',    pack:'Mewtwo',    php:20  },
+  { id:'a1-15',  name:'Scyther',           set:'Genetic Apex', num:'15',  rarity:'Uncommon',    type:'Grass',    pack:'Pikachu',   php:45  },
+  { id:'a1-16',  name:'Pinsir',            set:'Genetic Apex', num:'16',  rarity:'Rare',        type:'Grass',    pack:'Pikachu',   php:160 },
+  { id:'a1-17',  name:'Chikorita',         set:'Genetic Apex', num:'17',  rarity:'Common',      type:'Grass',    pack:'Mewtwo',    php:20  },
+  { id:'a1-18',  name:'Bayleef',           set:'Genetic Apex', num:'18',  rarity:'Uncommon',    type:'Grass',    pack:'Mewtwo',    php:40  },
+  { id:'a1-19',  name:'Meganium',          set:'Genetic Apex', num:'19',  rarity:'Rare',        type:'Grass',    pack:'Mewtwo',    php:200 },
+  { id:'a1-20',  name:'Sunkern',           set:'Genetic Apex', num:'20',  rarity:'Common',      type:'Grass',    pack:'Pikachu',   php:20  },
+  { id:'a1-21',  name:'Sunflora',          set:'Genetic Apex', num:'21',  rarity:'Uncommon',    type:'Grass',    pack:'Pikachu',   php:40  },
+  // ─── FIRE ───
+  { id:'a1-22',  name:'Charmander',        set:'Genetic Apex', num:'22',  rarity:'Common',      type:'Fire',     pack:'Charizard', php:25  },
+  { id:'a1-23',  name:'Charmeleon',        set:'Genetic Apex', num:'23',  rarity:'Uncommon',    type:'Fire',     pack:'Charizard', php:50  },
+  { id:'a1-24',  name:'Charizard',         set:'Genetic Apex', num:'24',  rarity:'Rare',        type:'Fire',     pack:'Charizard', php:450 },
+  { id:'a1-25',  name:'Charizard ex',      set:'Genetic Apex', num:'25',  rarity:'Double Rare', type:'Fire',     pack:'Charizard', php:2200},
+  { id:'a1-26',  name:'Growlithe',         set:'Genetic Apex', num:'26',  rarity:'Common',      type:'Fire',     pack:'Charizard', php:20  },
+  { id:'a1-27',  name:'Arcanine',          set:'Genetic Apex', num:'27',  rarity:'Rare',        type:'Fire',     pack:'Charizard', php:180 },
+  { id:'a1-28',  name:'Arcanine ex',       set:'Genetic Apex', num:'28',  rarity:'Double Rare', type:'Fire',     pack:'Charizard', php:900 },
+  { id:'a1-29',  name:'Ponyta',            set:'Genetic Apex', num:'29',  rarity:'Common',      type:'Fire',     pack:'Charizard', php:20  },
+  { id:'a1-30',  name:'Rapidash',          set:'Genetic Apex', num:'30',  rarity:'Uncommon',    type:'Fire',     pack:'Charizard', php:45  },
+  { id:'a1-31',  name:'Magmar',            set:'Genetic Apex', num:'31',  rarity:'Common',      type:'Fire',     pack:'Charizard', php:20  },
+  { id:'a1-32',  name:'Flareon',           set:'Genetic Apex', num:'32',  rarity:'Rare',        type:'Fire',     pack:'Charizard', php:160 },
+  { id:'a1-33',  name:'Moltres',           set:'Genetic Apex', num:'33',  rarity:'Rare',        type:'Fire',     pack:'Charizard', php:380 },
+  { id:'a1-34',  name:'Moltres ex',        set:'Genetic Apex', num:'34',  rarity:'Double Rare', type:'Fire',     pack:'Charizard', php:1800},
+  { id:'a1-35',  name:'Cyndaquil',         set:'Genetic Apex', num:'35',  rarity:'Common',      type:'Fire',     pack:'Charizard', php:20  },
+  { id:'a1-36',  name:'Quilava',           set:'Genetic Apex', num:'36',  rarity:'Uncommon',    type:'Fire',     pack:'Charizard', php:40  },
+  { id:'a1-37',  name:'Typhlosion',        set:'Genetic Apex', num:'37',  rarity:'Rare',        type:'Fire',     pack:'Charizard', php:220 },
+  { id:'a1-38',  name:'Typhlosion ex',     set:'Genetic Apex', num:'38',  rarity:'Double Rare', type:'Fire',     pack:'Charizard', php:1100},
+  { id:'a1-39',  name:'Magby',             set:'Genetic Apex', num:'39',  rarity:'Common',      type:'Fire',     pack:'Charizard', php:20  },
+  { id:'a1-40',  name:'Magmortar',         set:'Genetic Apex', num:'40',  rarity:'Rare',        type:'Fire',     pack:'Charizard', php:180 },
+  // ─── WATER ───
+  { id:'a1-41',  name:'Squirtle',          set:'Genetic Apex', num:'41',  rarity:'Common',      type:'Water',    pack:'Pikachu',   php:20  },
+  { id:'a1-42',  name:'Wartortle',         set:'Genetic Apex', num:'42',  rarity:'Uncommon',    type:'Water',    pack:'Pikachu',   php:40  },
+  { id:'a1-43',  name:'Blastoise',         set:'Genetic Apex', num:'43',  rarity:'Rare',        type:'Water',    pack:'Pikachu',   php:250 },
+  { id:'a1-44',  name:'Blastoise ex',      set:'Genetic Apex', num:'44',  rarity:'Double Rare', type:'Water',    pack:'Pikachu',   php:1200},
+  { id:'a1-45',  name:'Psyduck',           set:'Genetic Apex', num:'45',  rarity:'Common',      type:'Water',    pack:'Pikachu',   php:20  },
+  { id:'a1-46',  name:'Golduck',           set:'Genetic Apex', num:'46',  rarity:'Uncommon',    type:'Water',    pack:'Pikachu',   php:45  },
+  { id:'a1-47',  name:'Poliwag',           set:'Genetic Apex', num:'47',  rarity:'Common',      type:'Water',    pack:'Pikachu',   php:20  },
+  { id:'a1-48',  name:'Poliwhirl',         set:'Genetic Apex', num:'48',  rarity:'Uncommon',    type:'Water',    pack:'Pikachu',   php:40  },
+  { id:'a1-49',  name:'Poliwrath',         set:'Genetic Apex', num:'49',  rarity:'Rare',        type:'Water',    pack:'Pikachu',   php:160 },
+  { id:'a1-50',  name:'Tentacool',         set:'Genetic Apex', num:'50',  rarity:'Common',      type:'Water',    pack:'Pikachu',   php:20  },
+  { id:'a1-51',  name:'Tentacruel',        set:'Genetic Apex', num:'51',  rarity:'Uncommon',    type:'Water',    pack:'Pikachu',   php:40  },
+  { id:'a1-52',  name:'Seel',              set:'Genetic Apex', num:'52',  rarity:'Common',      type:'Water',    pack:'Pikachu',   php:20  },
+  { id:'a1-53',  name:'Dewgong',           set:'Genetic Apex', num:'53',  rarity:'Uncommon',    type:'Water',    pack:'Pikachu',   php:40  },
+  { id:'a1-54',  name:'Shellder',          set:'Genetic Apex', num:'54',  rarity:'Common',      type:'Water',    pack:'Pikachu',   php:20  },
+  { id:'a1-55',  name:'Cloyster',          set:'Genetic Apex', num:'55',  rarity:'Uncommon',    type:'Water',    pack:'Pikachu',   php:40  },
+  { id:'a1-56',  name:'Krabby',            set:'Genetic Apex', num:'56',  rarity:'Common',      type:'Water',    pack:'Pikachu',   php:20  },
+  { id:'a1-57',  name:'Kingler',           set:'Genetic Apex', num:'57',  rarity:'Uncommon',    type:'Water',    pack:'Pikachu',   php:40  },
+  { id:'a1-58',  name:'Staryu',            set:'Genetic Apex', num:'58',  rarity:'Common',      type:'Water',    pack:'Pikachu',   php:20  },
+  { id:'a1-59',  name:'Starmie',           set:'Genetic Apex', num:'59',  rarity:'Rare',        type:'Water',    pack:'Pikachu',   php:160 },
+  { id:'a1-60',  name:'Lapras',            set:'Genetic Apex', num:'60',  rarity:'Rare',        type:'Water',    pack:'Pikachu',   php:220 },
+  { id:'a1-61',  name:'Lapras ex',         set:'Genetic Apex', num:'61',  rarity:'Double Rare', type:'Water',    pack:'Pikachu',   php:1000},
+  { id:'a1-62',  name:'Vaporeon',          set:'Genetic Apex', num:'62',  rarity:'Rare',        type:'Water',    pack:'Pikachu',   php:180 },
+  { id:'a1-63',  name:'Omanyte',           set:'Genetic Apex', num:'63',  rarity:'Common',      type:'Water',    pack:'Pikachu',   php:20  },
+  { id:'a1-64',  name:'Omastar',           set:'Genetic Apex', num:'64',  rarity:'Rare',        type:'Water',    pack:'Pikachu',   php:160 },
+  { id:'a1-65',  name:'Kabuto',            set:'Genetic Apex', num:'65',  rarity:'Common',      type:'Water',    pack:'Pikachu',   php:20  },
+  { id:'a1-66',  name:'Kabutops',          set:'Genetic Apex', num:'66',  rarity:'Rare',        type:'Water',    pack:'Pikachu',   php:180 },
+  { id:'a1-67',  name:'Totodile',          set:'Genetic Apex', num:'67',  rarity:'Common',      type:'Water',    pack:'Pikachu',   php:20  },
+  { id:'a1-68',  name:'Croconaw',          set:'Genetic Apex', num:'68',  rarity:'Uncommon',    type:'Water',    pack:'Pikachu',   php:40  },
+  { id:'a1-69',  name:'Feraligatr',        set:'Genetic Apex', num:'69',  rarity:'Rare',        type:'Water',    pack:'Pikachu',   php:220 },
+  { id:'a1-70',  name:'Wooloo',            set:'Genetic Apex', num:'70',  rarity:'Common',      type:'Water',    pack:'Pikachu',   php:20  },
+  // ─── ELECTRIC ───
+  { id:'a1-71',  name:'Pikachu',           set:'Genetic Apex', num:'71',  rarity:'Common',      type:'Electric', pack:'Pikachu',   php:35  },
+  { id:'a1-72',  name:'Raichu',            set:'Genetic Apex', num:'72',  rarity:'Rare',        type:'Electric', pack:'Pikachu',   php:180 },
+  { id:'a1-73',  name:'Magnemite',         set:'Genetic Apex', num:'73',  rarity:'Common',      type:'Electric', pack:'Pikachu',   php:20  },
+  { id:'a1-74',  name:'Magneton',          set:'Genetic Apex', num:'74',  rarity:'Uncommon',    type:'Electric', pack:'Pikachu',   php:45  },
+  { id:'a1-75',  name:'Voltorb',           set:'Genetic Apex', num:'75',  rarity:'Common',      type:'Electric', pack:'Pikachu',   php:20  },
+  { id:'a1-76',  name:'Electrode',         set:'Genetic Apex', num:'76',  rarity:'Uncommon',    type:'Electric', pack:'Pikachu',   php:40  },
+  { id:'a1-77',  name:'Jolteon',           set:'Genetic Apex', num:'77',  rarity:'Rare',        type:'Electric', pack:'Pikachu',   php:200 },
+  { id:'a1-78',  name:'Zapdos',            set:'Genetic Apex', num:'78',  rarity:'Rare',        type:'Electric', pack:'Pikachu',   php:350 },
+  { id:'a1-79',  name:'Zapdos ex',         set:'Genetic Apex', num:'79',  rarity:'Double Rare', type:'Electric', pack:'Pikachu',   php:1600},
+  { id:'a1-80',  name:'Chinchou',          set:'Genetic Apex', num:'80',  rarity:'Common',      type:'Electric', pack:'Pikachu',   php:20  },
+  { id:'a1-81',  name:'Lanturn',           set:'Genetic Apex', num:'81',  rarity:'Uncommon',    type:'Electric', pack:'Pikachu',   php:40  },
+  { id:'a1-82',  name:'Pichu',             set:'Genetic Apex', num:'82',  rarity:'Common',      type:'Electric', pack:'Pikachu',   php:25  },
+  { id:'a1-83',  name:'Mareep',            set:'Genetic Apex', num:'83',  rarity:'Common',      type:'Electric', pack:'Pikachu',   php:20  },
+  { id:'a1-84',  name:'Flaaffy',           set:'Genetic Apex', num:'84',  rarity:'Uncommon',    type:'Electric', pack:'Pikachu',   php:40  },
+  { id:'a1-85',  name:'Ampharos',          set:'Genetic Apex', num:'85',  rarity:'Rare',        type:'Electric', pack:'Pikachu',   php:200 },
+  { id:'a1-86',  name:'Ampharos ex',       set:'Genetic Apex', num:'86',  rarity:'Double Rare', type:'Electric', pack:'Pikachu',   php:950 },
+  // ─── PSYCHIC ───
+  { id:'a1-87',  name:'Slowpoke',          set:'Genetic Apex', num:'87',  rarity:'Common',      type:'Psychic',  pack:'Mewtwo',    php:20  },
+  { id:'a1-88',  name:'Slowbro',           set:'Genetic Apex', num:'88',  rarity:'Rare',        type:'Psychic',  pack:'Mewtwo',    php:150 },
+  { id:'a1-89',  name:'Slowbro ex',        set:'Genetic Apex', num:'89',  rarity:'Double Rare', type:'Psychic',  pack:'Mewtwo',    php:850 },
+  { id:'a1-90',  name:'Gastly',            set:'Genetic Apex', num:'90',  rarity:'Common',      type:'Psychic',  pack:'Mewtwo',    php:20  },
+  { id:'a1-91',  name:'Haunter',           set:'Genetic Apex', num:'91',  rarity:'Uncommon',    type:'Psychic',  pack:'Mewtwo',    php:45  },
+  { id:'a1-92',  name:'Gengar',            set:'Genetic Apex', num:'92',  rarity:'Rare',        type:'Psychic',  pack:'Mewtwo',    php:220 },
+  { id:'a1-93',  name:'Gengar ex',         set:'Genetic Apex', num:'93',  rarity:'Double Rare', type:'Psychic',  pack:'Mewtwo',    php:1200},
+  { id:'a1-94',  name:'Drowzee',           set:'Genetic Apex', num:'94',  rarity:'Common',      type:'Psychic',  pack:'Mewtwo',    php:20  },
+  { id:'a1-95',  name:'Hypno',             set:'Genetic Apex', num:'95',  rarity:'Uncommon',    type:'Psychic',  pack:'Mewtwo',    php:40  },
+  { id:'a1-96',  name:'Jynx',              set:'Genetic Apex', num:'96',  rarity:'Uncommon',    type:'Psychic',  pack:'Mewtwo',    php:45  },
+  { id:'a1-97',  name:'Mr. Mime',          set:'Genetic Apex', num:'97',  rarity:'Uncommon',    type:'Psychic',  pack:'Mewtwo',    php:40  },
+  { id:'a1-98',  name:'Jigglypuff',        set:'Genetic Apex', num:'98',  rarity:'Common',      type:'Psychic',  pack:'Mewtwo',    php:20  },
+  { id:'a1-99',  name:'Wigglytuff',        set:'Genetic Apex', num:'99',  rarity:'Uncommon',    type:'Psychic',  pack:'Mewtwo',    php:40  },
+  { id:'a1-100', name:'Mewtwo',            set:'Genetic Apex', num:'100', rarity:'Rare',        type:'Psychic',  pack:'Mewtwo',    php:500 },
+  { id:'a1-101', name:'Mewtwo ex',         set:'Genetic Apex', num:'101', rarity:'Double Rare', type:'Psychic',  pack:'Mewtwo',    php:3500},
+  { id:'a1-102', name:'Clefairy',          set:'Genetic Apex', num:'102', rarity:'Common',      type:'Psychic',  pack:'Mewtwo',    php:20  },
+  { id:'a1-103', name:'Clefable',          set:'Genetic Apex', num:'103', rarity:'Rare',        type:'Psychic',  pack:'Mewtwo',    php:160 },
+  { id:'a1-104', name:'Cleffa',            set:'Genetic Apex', num:'104', rarity:'Common',      type:'Psychic',  pack:'Mewtwo',    php:20  },
+  { id:'a1-105', name:'Snubbull',          set:'Genetic Apex', num:'105', rarity:'Common',      type:'Psychic',  pack:'Mewtwo',    php:20  },
+  { id:'a1-106', name:'Granbull',          set:'Genetic Apex', num:'106', rarity:'Uncommon',    type:'Psychic',  pack:'Mewtwo',    php:40  },
+  { id:'a1-107', name:'Misdreavus',        set:'Genetic Apex', num:'107', rarity:'Common',      type:'Psychic',  pack:'Mewtwo',    php:20  },
+  { id:'a1-108', name:'Ralts',             set:'Genetic Apex', num:'108', rarity:'Common',      type:'Psychic',  pack:'Mewtwo',    php:20  },
+  { id:'a1-109', name:'Kirlia',            set:'Genetic Apex', num:'109', rarity:'Uncommon',    type:'Psychic',  pack:'Mewtwo',    php:40  },
+  { id:'a1-110', name:'Gardevoir',         set:'Genetic Apex', num:'110', rarity:'Rare',        type:'Psychic',  pack:'Mewtwo',    php:200 },
+  { id:'a1-111', name:'Gardevoir ex',      set:'Genetic Apex', num:'111', rarity:'Double Rare', type:'Psychic',  pack:'Mewtwo',    php:2800},
+  // ─── FIGHTING ───
+  { id:'a1-112', name:'Mankey',            set:'Genetic Apex', num:'112', rarity:'Common',      type:'Fighting', pack:'Charizard', php:20  },
+  { id:'a1-113', name:'Primeape',          set:'Genetic Apex', num:'113', rarity:'Uncommon',    type:'Fighting', pack:'Charizard', php:40  },
+  { id:'a1-114', name:'Geodude',           set:'Genetic Apex', num:'114', rarity:'Common',      type:'Fighting', pack:'Charizard', php:20  },
+  { id:'a1-115', name:'Graveler',          set:'Genetic Apex', num:'115', rarity:'Uncommon',    type:'Fighting', pack:'Charizard', php:40  },
+  { id:'a1-116', name:'Golem',             set:'Genetic Apex', num:'116', rarity:'Rare',        type:'Fighting', pack:'Charizard', php:180 },
+  { id:'a1-117', name:'Rhyhorn',           set:'Genetic Apex', num:'117', rarity:'Common',      type:'Fighting', pack:'Charizard', php:20  },
+  { id:'a1-118', name:'Rhydon',            set:'Genetic Apex', num:'118', rarity:'Uncommon',    type:'Fighting', pack:'Charizard', php:45  },
+  { id:'a1-119', name:'Hitmonlee',         set:'Genetic Apex', num:'119', rarity:'Uncommon',    type:'Fighting', pack:'Charizard', php:45  },
+  { id:'a1-120', name:'Hitmonchan',        set:'Genetic Apex', num:'120', rarity:'Uncommon',    type:'Fighting', pack:'Charizard', php:45  },
+  { id:'a1-121', name:'Cubone',            set:'Genetic Apex', num:'121', rarity:'Common',      type:'Fighting', pack:'Charizard', php:20  },
+  { id:'a1-122', name:'Marowak',           set:'Genetic Apex', num:'122', rarity:'Uncommon',    type:'Fighting', pack:'Charizard', php:40  },
+  { id:'a1-123', name:'Aerodactyl',        set:'Genetic Apex', num:'123', rarity:'Rare',        type:'Fighting', pack:'Charizard', php:180 },
+  { id:'a1-124', name:'Aerodactyl ex',     set:'Genetic Apex', num:'124', rarity:'Double Rare', type:'Fighting', pack:'Charizard', php:900 },
+  // ─── DARKNESS ───
+  { id:'a1-125', name:'Alolan Rattata',    set:'Genetic Apex', num:'125', rarity:'Common',      type:'Dark',     pack:'Pikachu',   php:20  },
+  { id:'a1-126', name:'Alolan Raticate',   set:'Genetic Apex', num:'126', rarity:'Uncommon',    type:'Dark',     pack:'Pikachu',   php:40  },
+  { id:'a1-127', name:'Alolan Grimer',     set:'Genetic Apex', num:'127', rarity:'Common',      type:'Dark',     pack:'Pikachu',   php:20  },
+  { id:'a1-128', name:'Alolan Muk',        set:'Genetic Apex', num:'128', rarity:'Rare',        type:'Dark',     pack:'Pikachu',   php:150 },
+  { id:'a1-129', name:'Umbreon',           set:'Genetic Apex', num:'129', rarity:'Rare',        type:'Dark',     pack:'Mewtwo',    php:250 },
+  { id:'a1-130', name:'Murkrow',           set:'Genetic Apex', num:'130', rarity:'Common',      type:'Dark',     pack:'Mewtwo',    php:20  },
+  { id:'a1-131', name:'Houndour',          set:'Genetic Apex', num:'131', rarity:'Common',      type:'Dark',     pack:'Mewtwo',    php:20  },
+  { id:'a1-132', name:'Houndoom',          set:'Genetic Apex', num:'132', rarity:'Rare',        type:'Dark',     pack:'Mewtwo',    php:160 },
+  { id:'a1-133', name:'Houndoom ex',       set:'Genetic Apex', num:'133', rarity:'Double Rare', type:'Dark',     pack:'Mewtwo',    php:850 },
+  // ─── METAL ───
+  { id:'a1-134', name:'Magnemite',         set:'Genetic Apex', num:'134', rarity:'Common',      type:'Steel',    pack:'Charizard', php:20  },
+  { id:'a1-135', name:'Magneton',          set:'Genetic Apex', num:'135', rarity:'Uncommon',    type:'Steel',    pack:'Charizard', php:40  },
+  { id:'a1-136', name:'Scizor',            set:'Genetic Apex', num:'136', rarity:'Rare',        type:'Steel',    pack:'Charizard', php:200 },
+  { id:'a1-137', name:'Scizor ex',         set:'Genetic Apex', num:'137', rarity:'Double Rare', type:'Steel',    pack:'Charizard', php:1000},
+  { id:'a1-138', name:'Steelix',           set:'Genetic Apex', num:'138', rarity:'Rare',        type:'Steel',    pack:'Charizard', php:180 },
+  { id:'a1-139', name:'Steelix ex',        set:'Genetic Apex', num:'139', rarity:'Double Rare', type:'Steel',    pack:'Charizard', php:880 },
+  { id:'a1-140', name:'Forretress',        set:'Genetic Apex', num:'140', rarity:'Rare',        type:'Steel',    pack:'Charizard', php:160 },
+  // ─── DRAGON / COLORLESS ───
+  { id:'a1-141', name:'Dratini',           set:'Genetic Apex', num:'141', rarity:'Common',      type:'Dragon',   pack:'Mewtwo',    php:20  },
+  { id:'a1-142', name:'Dragonair',         set:'Genetic Apex', num:'142', rarity:'Uncommon',    type:'Dragon',   pack:'Mewtwo',    php:40  },
+  { id:'a1-143', name:'Dragonite',         set:'Genetic Apex', num:'143', rarity:'Rare',        type:'Dragon',   pack:'Mewtwo',    php:280 },
+  { id:'a1-144', name:'Dragonite ex',      set:'Genetic Apex', num:'144', rarity:'Double Rare', type:'Dragon',   pack:'Mewtwo',    php:1400},
+  { id:'a1-145', name:'Eevee',             set:'Genetic Apex', num:'145', rarity:'Common',      type:'Colorless',pack:'All Packs', php:30  },
+  { id:'a1-146', name:'Chansey',           set:'Genetic Apex', num:'146', rarity:'Common',      type:'Colorless',pack:'All Packs', php:20  },
+  { id:'a1-147', name:'Blissey',           set:'Genetic Apex', num:'147', rarity:'Rare',        type:'Colorless',pack:'All Packs', php:160 },
+  { id:'a1-148', name:'Snorlax',           set:'Genetic Apex', num:'148', rarity:'Rare',        type:'Colorless',pack:'All Packs', php:250 },
+  { id:'a1-149', name:'Snorlax ex',        set:'Genetic Apex', num:'149', rarity:'Double Rare', type:'Colorless',pack:'All Packs', php:1200},
+  { id:'a1-150', name:'Kangaskhan',        set:'Genetic Apex', num:'150', rarity:'Rare',        type:'Colorless',pack:'All Packs', php:180 },
+  // ─── TRAINER CARDS ───
+  { id:'a1-151', name:'Brock',             set:'Genetic Apex', num:'151', rarity:'Uncommon',    type:'Trainer',  pack:'Charizard', php:200 },
+  { id:'a1-152', name:'Misty',             set:'Genetic Apex', num:'152', rarity:'Uncommon',    type:'Trainer',  pack:'Pikachu',   php:220 },
+  { id:'a1-153', name:'Lt. Surge',         set:'Genetic Apex', num:'153', rarity:'Uncommon',    type:'Trainer',  pack:'Pikachu',   php:180 },
+  { id:'a1-154', name:'Erika',             set:'Genetic Apex', num:'154', rarity:'Uncommon',    type:'Trainer',  pack:'Mewtwo',    php:200 },
+  { id:'a1-155', name:'Koga',              set:'Genetic Apex', num:'155', rarity:'Uncommon',    type:'Trainer',  pack:'Mewtwo',    php:180 },
+  { id:'a1-156', name:'Blaine',            set:'Genetic Apex', num:'156', rarity:'Uncommon',    type:'Trainer',  pack:'Charizard', php:220 },
+  { id:'a1-157', name:'Giovanni',          set:'Genetic Apex', num:'157', rarity:'Uncommon',    type:'Trainer',  pack:'Mewtwo',    php:450 },
+  { id:'a1-158', name:'Poké Ball',         set:'Genetic Apex', num:'158', rarity:'Common',      type:'Trainer',  pack:'All Packs', php:50  },
+  { id:'a1-159', name:'Professer Research',set:'Genetic Apex', num:'159', rarity:'Uncommon',    type:'Trainer',  pack:'All Packs', php:120 },
+  { id:'a1-160', name:'Hand Scope',        set:'Genetic Apex', num:'160', rarity:'Uncommon',    type:'Trainer',  pack:'All Packs', php:80  },
+  { id:'a1-161', name:'Mythical Slab',     set:'Genetic Apex', num:'161', rarity:'Uncommon',    type:'Trainer',  pack:'All Packs', php:100 },
+  { id:'a1-162', name:'Oak\'s Legacy',     set:'Genetic Apex', num:'162', rarity:'Rare',        type:'Trainer',  pack:'All Packs', php:350 },
+  { id:'a1-163', name:'Leaf',              set:'Genetic Apex', num:'163', rarity:'Uncommon',    type:'Trainer',  pack:'Charizard', php:160 },
+  { id:'a1-164', name:'Red',               set:'Genetic Apex', num:'164', rarity:'Uncommon',    type:'Trainer',  pack:'Charizard', php:280 },
+  // ─── ILLUSTRATION RARE (secret) ───
+  { id:'a1-165', name:'Venusaur ex IR',    set:'Genetic Apex', num:'165', rarity:'Illus. Rare', type:'Grass',    pack:'Mewtwo',    php:1800 },
+  { id:'a1-166', name:'Charizard ex IR',   set:'Genetic Apex', num:'166', rarity:'Illus. Rare', type:'Fire',     pack:'Charizard', php:5500 },
+  { id:'a1-167', name:'Blastoise ex IR',   set:'Genetic Apex', num:'167', rarity:'Illus. Rare', type:'Water',    pack:'Pikachu',   php:2200 },
+  { id:'a1-168', name:'Arcanine ex IR',    set:'Genetic Apex', num:'168', rarity:'Illus. Rare', type:'Fire',     pack:'Charizard', php:1600 },
+  { id:'a1-169', name:'Moltres ex IR',     set:'Genetic Apex', num:'169', rarity:'Illus. Rare', type:'Fire',     pack:'Charizard', php:3800 },
+  { id:'a1-170', name:'Zapdos ex IR',      set:'Genetic Apex', num:'170', rarity:'Illus. Rare', type:'Electric', pack:'Pikachu',   php:3200 },
+  { id:'a1-171', name:'Gengar ex IR',      set:'Genetic Apex', num:'171', rarity:'Illus. Rare', type:'Psychic',  pack:'Mewtwo',    php:2500 },
+  { id:'a1-172', name:'Mewtwo ex IR',      set:'Genetic Apex', num:'172', rarity:'Illus. Rare', type:'Psychic',  pack:'Mewtwo',    php:6000 },
+  { id:'a1-173', name:'Dragonite ex IR',   set:'Genetic Apex', num:'173', rarity:'Illus. Rare', type:'Dragon',   pack:'Mewtwo',    php:2800 },
+  { id:'a1-174', name:'Pikachu ex IR',     set:'Genetic Apex', num:'174', rarity:'Illus. Rare', type:'Electric', pack:'Pikachu',   php:8000 },
+  { id:'a1-175', name:'Aerodactyl ex IR',  set:'Genetic Apex', num:'175', rarity:'Illus. Rare', type:'Fighting', pack:'Charizard', php:1500 },
+  { id:'a1-176', name:'Gardevoir ex IR',   set:'Genetic Apex', num:'176', rarity:'Illus. Rare', type:'Psychic',  pack:'Mewtwo',    php:4500 },
+  { id:'a1-177', name:'Typhlosion ex IR',  set:'Genetic Apex', num:'177', rarity:'Illus. Rare', type:'Fire',     pack:'Charizard', php:1800 },
+  { id:'a1-178', name:'Blissey IR',        set:'Genetic Apex', num:'178', rarity:'Illus. Rare', type:'Colorless',pack:'All Packs', php:1200 },
+  { id:'a1-179', name:'Snorlax ex IR',     set:'Genetic Apex', num:'179', rarity:'Illus. Rare', type:'Colorless',pack:'All Packs', php:2500 },
+  { id:'a1-180', name:'Umbreon IR',        set:'Genetic Apex', num:'180', rarity:'Illus. Rare', type:'Dark',     pack:'Mewtwo',    php:2200 },
+  { id:'a1-181', name:'Giovanni IR',       set:'Genetic Apex', num:'181', rarity:'Illus. Rare', type:'Trainer',  pack:'Mewtwo',    php:3500 },
+  { id:'a1-182', name:'Erika IR',          set:'Genetic Apex', num:'182', rarity:'Illus. Rare', type:'Trainer',  pack:'Mewtwo',    php:2800 },
+  { id:'a1-183', name:'Misty IR',          set:'Genetic Apex', num:'183', rarity:'Illus. Rare', type:'Trainer',  pack:'Pikachu',   php:3200 },
+  { id:'a1-184', name:'Blaine IR',         set:'Genetic Apex', num:'184', rarity:'Illus. Rare', type:'Trainer',  pack:'Charizard', php:2400 },
+  // ─── ULTRA RARE ───
+  { id:'a1-185', name:'Charizard ex UR',   set:'Genetic Apex', num:'185', rarity:'Ultra Rare',  type:'Fire',     pack:'Charizard', php:8500 },
+  { id:'a1-186', name:'Mewtwo ex UR',      set:'Genetic Apex', num:'186', rarity:'Ultra Rare',  type:'Psychic',  pack:'Mewtwo',    php:9500 },
+  { id:'a1-187', name:'Pikachu ex UR',     set:'Genetic Apex', num:'187', rarity:'Ultra Rare',  type:'Electric', pack:'Pikachu',   php:12000},
+  { id:'a1-188', name:'Moltres ex UR',     set:'Genetic Apex', num:'188', rarity:'Ultra Rare',  type:'Fire',     pack:'Charizard', php:6000 },
+  { id:'a1-189', name:'Zapdos ex UR',      set:'Genetic Apex', num:'189', rarity:'Ultra Rare',  type:'Electric', pack:'Pikachu',   php:5500 },
+  { id:'a1-190', name:'Gardevoir ex UR',   set:'Genetic Apex', num:'190', rarity:'Ultra Rare',  type:'Psychic',  pack:'Mewtwo',    php:7500 },
+  { id:'a1-191', name:'Gengar ex UR',      set:'Genetic Apex', num:'191', rarity:'Ultra Rare',  type:'Psychic',  pack:'Mewtwo',    php:5000 },
+  { id:'a1-192', name:'Blastoise ex UR',   set:'Genetic Apex', num:'192', rarity:'Ultra Rare',  type:'Water',    pack:'Pikachu',   php:4500 },
+  { id:'a1-193', name:'Venusaur ex UR',    set:'Genetic Apex', num:'193', rarity:'Ultra Rare',  type:'Grass',    pack:'Mewtwo',    php:4000 },
+  { id:'a1-194', name:'Dragonite ex UR',   set:'Genetic Apex', num:'194', rarity:'Ultra Rare',  type:'Dragon',   pack:'Mewtwo',    php:5500 },
+  // ─── SPECIAL ILLUSTRATION RARE ───
+  { id:'a1-195', name:'Charizard ex SIR',  set:'Genetic Apex', num:'195', rarity:'Special Art', type:'Fire',     pack:'Charizard', php:18000},
+  { id:'a1-196', name:'Mewtwo ex SIR',     set:'Genetic Apex', num:'196', rarity:'Special Art', type:'Psychic',  pack:'Mewtwo',    php:22000},
+  { id:'a1-197', name:'Pikachu ex SIR',    set:'Genetic Apex', num:'197', rarity:'Special Art', type:'Electric', pack:'Pikachu',   php:28000},
+  { id:'a1-198', name:'Moltres ex SIR',    set:'Genetic Apex', num:'198', rarity:'Special Art', type:'Fire',     pack:'Charizard', php:12000},
+  { id:'a1-199', name:'Gardevoir ex SIR',  set:'Genetic Apex', num:'199', rarity:'Special Art', type:'Psychic',  pack:'Mewtwo',    php:15000},
+  { id:'a1-200', name:'Misty SIR',         set:'Genetic Apex', num:'200', rarity:'Special Art', type:'Trainer',  pack:'Pikachu',   php:8000 },
+  { id:'a1-201', name:'Giovanni SIR',      set:'Genetic Apex', num:'201', rarity:'Special Art', type:'Trainer',  pack:'Mewtwo',    php:10000},
+  // ─── HYPER RARE (Gold) ───
+  { id:'a1-202', name:'Charizard ex Gold', set:'Genetic Apex', num:'202', rarity:'Hyper Rare',  type:'Fire',     pack:'Charizard', php:35000},
+  { id:'a1-203', name:'Mewtwo ex Gold',    set:'Genetic Apex', num:'203', rarity:'Hyper Rare',  type:'Psychic',  pack:'Mewtwo',    php:38000},
+  { id:'a1-204', name:'Pikachu ex Gold',   set:'Genetic Apex', num:'204', rarity:'Hyper Rare',  type:'Electric', pack:'Pikachu',   php:45000},
+  { id:'a1-205', name:'Venusaur ex Gold',  set:'Genetic Apex', num:'205', rarity:'Hyper Rare',  type:'Grass',    pack:'Mewtwo',    php:22000},
+  { id:'a1-206', name:'Blastoise ex Gold', set:'Genetic Apex', num:'206', rarity:'Hyper Rare',  type:'Water',    pack:'Pikachu',   php:24000},
+  { id:'a1-207', name:'Gardevoir ex Gold', set:'Genetic Apex', num:'207', rarity:'Hyper Rare',  type:'Psychic',  pack:'Mewtwo',    php:28000},
+  { id:'a1-208', name:'Moltres ex Gold',   set:'Genetic Apex', num:'208', rarity:'Hyper Rare',  type:'Fire',     pack:'Charizard', php:20000},
+  { id:'a1-209', name:'Zapdos ex Gold',    set:'Genetic Apex', num:'209', rarity:'Hyper Rare',  type:'Electric', pack:'Pikachu',   php:18000},
+  { id:'a1-210', name:'Dragonite ex Gold', set:'Genetic Apex', num:'210', rarity:'Hyper Rare',  type:'Dragon',   pack:'Mewtwo',    php:25000},
+  { id:'a1-211', name:'Giovanni Gold',     set:'Genetic Apex', num:'211', rarity:'Hyper Rare',  type:'Trainer',  pack:'Mewtwo',    php:20000},
+  // ─── PROMO (211–226) ───
+  { id:'a1-212', name:'Pikachu ex Promo',  set:'Genetic Apex', num:'212', rarity:'Special Art', type:'Electric', pack:'Pikachu',   php:15000},
+  { id:'a1-213', name:'Mewtwo Promo',      set:'Genetic Apex', num:'213', rarity:'Illus. Rare', type:'Psychic',  pack:'Mewtwo',    php:3500 },
+  { id:'a1-214', name:'Charizard Promo',   set:'Genetic Apex', num:'214', rarity:'Illus. Rare', type:'Fire',     pack:'Charizard', php:4000 },
+  { id:'a1-215', name:'Eevee Promo',       set:'Genetic Apex', num:'215', rarity:'Illus. Rare', type:'Colorless',pack:'All Packs', php:1800 },
+  { id:'a1-216', name:'Pikachu Promo',     set:'Genetic Apex', num:'216', rarity:'Illus. Rare', type:'Electric', pack:'Pikachu',   php:2500 },
+  { id:'a1-217', name:'Mew Promo',         set:'Genetic Apex', num:'217', rarity:'Special Art', type:'Psychic',  pack:'All Packs', php:9000 },
+  { id:'a1-218', name:'Clefairy Promo',    set:'Genetic Apex', num:'218', rarity:'Rare',        type:'Psychic',  pack:'Mewtwo',    php:500  },
+  { id:'a1-219', name:'Squirtle Promo',    set:'Genetic Apex', num:'219', rarity:'Rare',        type:'Water',    pack:'Pikachu',   php:600  },
+  { id:'a1-220', name:'Bulbasaur Promo',   set:'Genetic Apex', num:'220', rarity:'Rare',        type:'Grass',    pack:'Mewtwo',    php:600  },
+  { id:'a1-221', name:'Charmander Promo',  set:'Genetic Apex', num:'221', rarity:'Rare',        type:'Fire',     pack:'Charizard', php:700  },
+  { id:'a1-222', name:'Snorlax Promo',     set:'Genetic Apex', num:'222', rarity:'Rare',        type:'Colorless',pack:'All Packs', php:550  },
+  { id:'a1-223', name:'Gengar Promo',      set:'Genetic Apex', num:'223', rarity:'Rare',        type:'Psychic',  pack:'Mewtwo',    php:600  },
+  { id:'a1-224', name:'Lapras Promo',      set:'Genetic Apex', num:'224', rarity:'Rare',        type:'Water',    pack:'Pikachu',   php:500  },
+  { id:'a1-225', name:'Zapdos Promo',      set:'Genetic Apex', num:'225', rarity:'Rare',        type:'Electric', pack:'Pikachu',   php:600  },
+  { id:'a1-226', name:'Dragonite Promo',   set:'Genetic Apex', num:'226', rarity:'Rare',        type:'Dragon',   pack:'Mewtwo',    php:700  },
+];
+
+const RARITY_CLASS = {
+  'Common':'r-common','Uncommon':'r-uncommon','Rare':'r-rare',
+  'Double Rare':'r-ultra','Illus. Rare':'r-holo','Ultra Rare':'r-ultra',
+  'Special Art':'r-secret','Hyper Rare':'r-ex',
+};
+const TYPE_CLASS = {
+  Fire:'t-fire',Water:'t-water',Grass:'t-grass',Electric:'t-electric',
+  Psychic:'t-psychic',Dark:'t-dark',Dragon:'t-dragon',Fighting:'t-fighting',
+  Steel:'t-steel',Colorless:'t-colorless',Trainer:'t-trainer',
+};
+const TYPE_EMO = {
+  Fire:'🔥',Water:'💧',Grass:'🌿',Electric:'⚡',Psychic:'🔮',
+  Dark:'🌑',Dragon:'🐉',Fighting:'🥊',Steel:'⚙️',Colorless:'⭐',Trainer:'🃏',
+};
+
+let owned = {};
+let currentPage = 0;
+let currentFilter = 'all';
+const CARDS_PER_PAGE = 6;
+
+function loadOwned() {
+  try { owned = JSON.parse(localStorage.getItem('poke_owned') || '{}'); } catch(e) { owned = {}; }
+}
+function saveOwned() {
+  localStorage.setItem('poke_owned', JSON.stringify(owned));
+}
+function setFilter(f,btn) {
+  currentFilter = f; currentPage = 0;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+function getFiltered() {
+  const q  = document.getElementById('search').value.trim().toLowerCase();
+  const pf = document.getElementById('pack-filter').value;
+  const tf = document.getElementById('type-filter').value;
+  const sv = document.getElementById('sort').value;
+  let cards = ALL_CARDS.filter(c => {
+    const io = !!owned[c.id];
+    if (currentFilter === 'owned'     && !io) return false;
+    if (currentFilter === 'not-owned' &&  io) return false;
+    if (q  && !c.name.toLowerCase().includes(q)) return false;
+    if (pf && c.pack !== pf) return false;
+    if (tf && c.type !== tf) return false;
+    return true;
+  });
+  if (sv === 'name')     cards.sort((a,b)=>a.name.localeCompare(b.name));
+  if (sv === 'value-hi') cards.sort((a,b)=>b.php - a.php);
+  if (sv === 'value-lo') cards.sort((a,b)=>a.php - b.php);
+  return cards;
+}
+function toggleOwned(id) {
+  owned[id] = !owned[id];
+  if (!owned[id]) { delete owned[id]; }
+  else {
+    const card = ALL_CARDS.find(c => c.id === id);
+    if (card) {
+      let hist = [];
+      try { hist = JSON.parse(localStorage.getItem('poke_history') || '[]'); } catch(e) {}
+      hist.unshift({ id:card.id, name:card.name, set:card.set, rarity:card.rarity, type:card.type, php:card.php, ts:Date.now(), src:'binder' });
+      if (hist.length > 30) hist = hist.slice(0, 30);
+      localStorage.setItem('poke_history', JSON.stringify(hist));
+    }
+  }
+  saveOwned();
+  render();
+  renderHistory();
+}
+function imgUrl(card) {
+  return `https://images.pokemontcg.io/a1/${card.num}.png`;
+}
+function cardFacePlaceholder(card) {
+  const t = (card.type || 'colorless').toLowerCase();
+  const emo = TYPE_EMO[card.type] || '⭐';
+  const hpMap = { 'Common':60,'Uncommon':80,'Rare':110,'Double Rare':240,'Ultra Rare':280,'Illus. Rare':240,'Special Art':280,'Hyper Rare':330,'Trainer':null };
+  const hp = hpMap[card.rarity];
+  const hpStr = hp ? `<span class="pf-hp">${hp} HP</span>` : '';
+  return `<div class="card-face-placeholder">
+    <div class="pf-header pfh-${t}"><span class="pf-header-name">${card.name}</span>${hpStr}</div>
+    <div class="pf-art"><div class="pf-art-bg pfbg-${t}"></div><span class="pf-emo">${emo}</span></div>
+    <div class="pf-footer"><span class="pf-set">${card.set}</span><span class="pf-num">#${card.num}</span></div>
+  </div>`;
+}
+function cardHTML(card) {
+  const isOwned = !!owned[card.id];
+  const rarClass = RARITY_CLASS[card.rarity] || 'r-common';
+  const typeClass = TYPE_CLASS[card.type] || 't-colorless';
+  const typeEmo  = TYPE_EMO[card.type] || '⭐';
+  const packEmo  = card.pack === 'Charizard' ? '🔴' : card.pack === 'Mewtwo' ? '🟣' : card.pack === 'Pikachu' ? '🟡' : '✨';
+  return `<div class="card-slot ${isOwned?'owned':'not-owned'} tooltip" onclick="toggleOwned('${card.id}')" title="Click to toggle owned">
+    <div class="tooltip-box">${isOwned?'Mark as missing':'Mark as owned'}</div>
+    <div class="card-frame">
+      <div class="card-img-wrap" style="position:relative">
+        <img src="${imgUrl(card)}" alt="${card.name}" loading="lazy"
+          onerror="this.classList.add('hidden');this.nextElementSibling.style.display='flex';" style="display:block"/>
+        <div style="display:none;position:absolute;inset:0">${cardFacePlaceholder(card)}</div>
+        <div class="own-badge ${isOwned?'yes':'no'}" style="position:absolute;top:6px;right:6px">${isOwned?'✓':'+'}</div>
+      </div>
+      <div class="p-2">
+        <div class="text-white font-black text-xs leading-tight truncate">${card.name}</div>
+        <div class="text-slate-400 text-[10px] truncate">${packEmo} ${card.pack} · #${card.num}</div>
+        <div class="flex items-center justify-between mt-1 flex-wrap gap-1">
+          <span class="rarity-badge ${rarClass}">${card.rarity}</span>
+          <span class="text-[10px] font-bold text-green-400">₱${card.php.toLocaleString('en-PH')}</span>
+        </div>
+        <div class="mt-1"><span class="text-[10px] px-2 py-0.5 rounded-full ${typeClass}">${typeEmo} ${card.type}</span></div>
+      </div>
+    </div>
+  </div>`;
+}
+function buildDots(total, cur) {
+  const dots = document.getElementById('page-dots');
+  dots.innerHTML = '';
+  const max = Math.min(total, 7);
+  for (let i = 0; i < max; i++) {
+    const d = document.createElement('div');
+    d.className = `w-2 h-2 rounded-full transition-all cursor-pointer ${i===cur?'bg-red-400 scale-125':'bg-slate-600 hover:bg-slate-400'}`;
+    const pg = i;
+    d.onclick = () => { currentPage = pg; render(); };
+    dots.appendChild(d);
+  }
+  if (total > 7) { const sp = document.createElement('span'); sp.className='text-slate-500 text-xs'; sp.textContent=`…${total}`; dots.appendChild(sp); }
+}
+function render() {
+  const filtered = getFiltered();
+  const totalPages = Math.max(1, Math.ceil(filtered.length / CARDS_PER_PAGE));
+  if (currentPage >= totalPages) currentPage = totalPages - 1;
+  const start = currentPage * CARDS_PER_PAGE;
+  const page  = filtered.slice(start, start + CARDS_PER_PAGE);
+  const grid  = document.getElementById('card-grid');
+  const empty = document.getElementById('empty-state');
+  if (!filtered.length) { grid.innerHTML=''; empty.classList.remove('hidden'); }
+  else { empty.classList.add('hidden'); grid.innerHTML = page.map(cardHTML).join(''); }
+  document.getElementById('page-info').textContent    = `Page ${currentPage+1} / ${totalPages}`;
+  document.getElementById('showing-info').textContent = `${filtered.length} card${filtered.length!==1?'s':''} found`;
+  document.getElementById('btn-prev').disabled = currentPage === 0;
+  document.getElementById('btn-next').disabled = currentPage >= totalPages - 1;
+  buildDots(totalPages, currentPage);
+  const ownedCount = ALL_CARDS.filter(c=>owned[c.id]).length;
+  const totalValue = ALL_CARDS.filter(c=>owned[c.id]).reduce((s,c)=>s+c.php,0);
+  const pct = Math.round(ownedCount / ALL_CARDS.length * 100);
+  document.getElementById('stat-owned').textContent = ownedCount;
+  document.getElementById('stat-total').textContent = ALL_CARDS.length;
+  document.getElementById('stat-value').textContent = '₱' + totalValue.toLocaleString('en-PH');
+  document.getElementById('stat-pct').textContent   = pct + '%';
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+function prevPage() { if (currentPage > 0) { currentPage--; render(); } }
+function nextPage() {
+  const totalPages = Math.ceil(getFiltered().length / CARDS_PER_PAGE);
+  if (currentPage < totalPages - 1) { currentPage++; render(); }
+}
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowLeft') prevPage();
+  if (e.key==='ArrowRight') nextPage();
+});
+function buildDropdowns() {
+  const types = [...new Set(ALL_CARDS.map(c=>c.type))].sort();
+  const typeEl = document.getElementById('type-filter');
+  types.forEach(t => { const o=document.createElement('option'); o.value=t; o.textContent=t; typeEl.appendChild(o); });
+}
+function renderHistory() {
+  const RAR_STYLE = {'Common':'background:#3f3f46;color:#a1a1aa','Uncommon':'background:#064e3b;color:#6ee7b7','Rare':'background:#1e3a8a;color:#93c5fd','Double Rare':'background:#78350f;color:#fcd34d','Illus. Rare':'background:#4a044e;color:#e879f9','Ultra Rare':'background:#7c2d12;color:#fb923c','Special Art':'background:#7f1d1d;color:#fca5a5','Hyper Rare':'background:#1e1b4b;color:#a5b4fc'};
+  function timeAgo(ts) { const s=Math.floor((Date.now()-ts)/1000); if(s<60)return'just now'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+  let hist = [];
+  try { hist = JSON.parse(localStorage.getItem('poke_history')||'[]'); } catch(e) {}
+  const setHist = hist.filter(h=>h.set==='Genetic Apex').slice(0,10);
+  const el = document.getElementById('binder-history-list');
+  if (!setHist.length) { el.innerHTML='<div class="hist-empty">No cards added yet — click a card to mark it owned!</div>'; return; }
+  el.innerHTML = setHist.map(h => {
+    const emo=TYPE_EMO[h.type]||'⭐'; const rs=RAR_STYLE[h.rarity]||'background:#3f3f46;color:#a1a1aa';
+    return `<div class="hist-row"><span class="hist-emo">${emo}</span><div style="flex:1;min-width:0"><div class="hist-name">${h.name}</div><div class="hist-meta">${h.set}<span class="hist-rbadge" style="${rs}">${h.rarity}</span> · ₱${h.php.toLocaleString('en-PH')}</div></div><span class="hist-time">${timeAgo(h.ts)}</span></div>`;
+  }).join('');
+}
+loadOwned();
+buildDropdowns();
+render();
+renderHistory();
+</script>
+</body>
+</html>
