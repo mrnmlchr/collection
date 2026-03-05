@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pokémon Battle</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: radial-gradient(ellipse at top, #0d1b3e 0%, #1a1a2e 55%, #0a0a18 100%);
+      min-height: 100vh; color: #fff;
+      overflow-x: hidden;
+    }
+    .press { font-family: 'Press Start 2P', monospace; }
+
+    /* Stars */
+    .stars {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.5) 0%, transparent 80%),
+        radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.4) 0%, transparent 80%),
+        radial-gradient(1px 1px at 55% 25%, rgba(255,255,255,0.6) 0%, transparent 80%),
+        radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.3) 0%, transparent 80%),
+        radial-gradient(1px 1px at 85% 40%, rgba(255,255,255,0.5) 0%, transparent 80%),
+        radial-gradient(1px 1px at 20% 90%, rgba(255,255,255,0.3) 0%, transparent 80%),
+        radial-gradient(1px 1px at 60% 50%, rgba(255,255,255,0.2) 0%, transparent 80%),
+        radial-gradient(1px 1px at 75% 5%,  rgba(255,255,255,0.6) 0%, transparent 80%);
+    }
+
+    .page { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; padding: 20px 16px 60px; }
+
+    /* ── Back button ── */
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: rgba(255,255,255,0.4); font-size: 9px;
+      text-decoration: none; margin-bottom: 20px;
+    }
+    .back-btn:hover { color: #FFD700; }
+
+    /* ════════════ PICKER SCREEN ════════════ */
+    #picker-screen { }
+    .picker-title {
+      text-align: center; font-size: 12px; color: #FFD700;
+      margin-bottom: 6px; line-height: 1.8;
+    }
+    .picker-sub { text-align: center; font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 24px; }
+    .picker-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      max-height: 62vh; overflow-y: auto; padding-right: 4px;
+    }
+    .picker-grid::-webkit-scrollbar { width: 4px; }
+    .picker-grid::-webkit-scrollbar-track { background: transparent; }
+    .picker-grid::-webkit-scrollbar-thumb { background: #3a3a6a; border-radius: 2px; }
+
+    .pick-card {
+      background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 14px; padding: 12px 8px; text-align: center; cursor: pointer;
+      transition: all 0.18s;
+    }
+    .pick-card:hover { border-color: #FFD700; background: rgba(255,215,0,0.08); transform: translateY(-3px); }
+    .pick-card.selected { border-color: #FFD700; background: rgba(255,215,0,0.14); box-shadow: 0 0 18px rgba(255,215,0,0.3); }
+    .pick-emo  { font-size: 28px; display: block; margin-bottom: 6px; }
+    .pick-name { font-size: 9px; color: #fff; font-weight: 800; line-height: 1.4; word-break: break-word; }
+    .pick-type { font-size: 8px; color: rgba(255,255,255,0.4); margin-top: 3px; }
+    .pick-hp   { font-size: 8px; color: #4ade80; margin-top: 2px; font-weight: 700; }
+
+    .start-btn {
+      display: block; width: 100%; margin-top: 20px;
+      background: linear-gradient(135deg, #FFD700, #f97316);
+      color: #000; font-family: 'Press Start 2P', monospace; font-size: 11px;
+      padding: 16px; border-radius: 14px; border: none; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(255,215,0,0.4); transition: opacity 0.2s;
+    }
+    .start-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .no-owned-msg {
+      text-align: center; padding: 40px 20px;
+      color: rgba(255,255,255,0.35); font-size: 13px; line-height: 1.7;
+    }
+
+    /* ════════════ BATTLE SCREEN ════════════ */
+    #battle-screen { display: none; }
+
+    /* Field */
+    .battle-field {
+      background: linear-gradient(180deg, #1c2a4a 0%, #2a1438 60%, #1a0d2e 100%);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 20px; overflow: hidden;
+      position: relative; min-height: 300px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      padding: 16px;
+    }
+    /* enemy row */
+    .enemy-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    /* player row */
+    .player-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-direction: row-reverse; }
+
+    /* HUD block */
+    .combatant-hud {
+      background: rgba(0,0,0,0.55); border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 12px; padding: 10px 14px; min-width: 160px; max-width: 195px;
+    }
+    .hud-name { font-size: 9px; color: #fff; font-weight: 900; font-family: 'Press Start 2P', monospace; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hud-level { font-size: 8px; color: rgba(255,255,255,0.4); margin-bottom: 6px; }
+    .hp-label { display: flex; justify-content: space-between; font-size: 9px; color: rgba(255,255,255,0.5); margin-bottom: 3px; }
+    .hp-bar-bg { background: rgba(255,255,255,0.1); border-radius: 99px; height: 8px; overflow: hidden; }
+    .hp-bar-fill { height: 100%; border-radius: 99px; transition: width 0.5s ease, background 0.5s; }
+
+    /* Sprites */
+    .sprite-wrap { position: relative; flex-shrink: 0; }
+    .battle-sprite {
+      width: 110px; height: 110px; object-fit: contain;
+      filter: drop-shadow(0 6px 16px rgba(0,0,0,0.8));
+    }
+    .enemy-sprite-wrap .battle-sprite { animation: enemy-float 2.4s ease-in-out infinite; }
+    .player-sprite-wrap .battle-sprite { animation: player-float 2s ease-in-out infinite; transform: scaleX(-1); }
+    @keyframes enemy-float {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-10px); }
+    }
+    @keyframes player-float {
+      0%,100% { transform: scaleX(-1) translateY(0); }
+      50%      { transform: scaleX(-1) translateY(-8px); }
+    }
+
+    /* Hit animation */
+    @keyframes hit-flash {
+      0%,100% { filter: drop-shadow(0 6px 16px rgba(0,0,0,0.8)); opacity: 1; }
+      25%,75% { filter: drop-shadow(0 0 20px rgba(255,255,255,0.9)) brightness(3); opacity: 0.4; }
+    }
+    .hit-anim { animation: hit-flash 0.5s ease both !important; }
+
+    /* Status badge */
+    .status-badge {
+      position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+      font-size: 8px; font-family: 'Press Start 2P', monospace;
+      padding: 2px 7px; border-radius: 999px; white-space: nowrap; z-index: 5;
+    }
+    .status-psn  { background: #4a044e; color: #e879f9; border: 1px solid #a21caf; }
+    .status-brn  { background: #7c2d12; color: #fb923c; border: 1px solid #c2410c; }
+    .status-par  { background: #78350f; color: #fcd34d; border: 1px solid #b45309; }
+    .status-slp  { background: #1e3a5f; color: #93c5fd; border: 1px solid #1d4ed8; }
+
+    /* Battle log */
+    .battle-log {
+      background: rgba(0,0,0,0.7); border: 1.5px solid rgba(255,255,255,0.1);
+      border-radius: 14px; padding: 14px 16px; min-height: 72px; margin: 12px 0;
+      font-size: 12px; color: #e2e8f0; line-height: 1.7;
+      max-height: 90px; overflow-y: auto;
+    }
+    .battle-log::-webkit-scrollbar { width: 3px; }
+    .battle-log::-webkit-scrollbar-thumb { background: #3a3a6a; }
+    .log-dmg    { color: #f87171; font-weight: 800; }
+    .log-heal   { color: #4ade80; font-weight: 800; }
+    .log-status { color: #c084fc; font-weight: 800; }
+    .log-miss   { color: #94a3b8; }
+    .log-crit   { color: #FFD700; font-weight: 800; }
+    .log-eff    { color: #f97316; font-weight: 800; }
+
+    /* Skills */
+    .skills-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .skill-btn {
+      background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.15);
+      border-radius: 12px; padding: 12px 10px; cursor: pointer;
+      transition: all 0.15s; text-align: left;
+    }
+    .skill-btn:hover:not(:disabled) { transform: scale(1.03); }
+    .skill-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .skill-name { font-size: 10px; font-weight: 900; color: #fff; display: block; margin-bottom: 3px; }
+    .skill-meta { font-size: 10px; color: rgba(255,255,255,0.4); display: flex; justify-content: space-between; }
+    .skill-pp   { font-size: 9px; color: rgba(255,255,255,0.35); margin-top: 2px; display: block; }
+
+    /* Type colors for skills */
+    .sk-fire     { border-color: #c0392b55; background: rgba(192,57,43,0.12); }
+    .sk-fire:hover:not(:disabled) { border-color: #e74c3c; background: rgba(192,57,43,0.22); }
+    .sk-water    { border-color: #1a5f7a55; background: rgba(26,95,122,0.12); }
+    .sk-water:hover:not(:disabled) { border-color: #3498db; background: rgba(26,95,122,0.22); }
+    .sk-grass    { border-color: #1e844955; background: rgba(30,132,73,0.12); }
+    .sk-grass:hover:not(:disabled) { border-color: #27ae60; background: rgba(30,132,73,0.22); }
+    .sk-electric { border-color: #d4ac0d55; background: rgba(212,172,13,0.12); }
+    .sk-electric:hover:not(:disabled) { border-color: #f1c40f; background: rgba(212,172,13,0.22); }
+    .sk-psychic  { border-color: #7d3c9855; background: rgba(125,60,152,0.12); }
+    .sk-psychic:hover:not(:disabled) { border-color: #9b59b6; background: rgba(125,60,152,0.22); }
+    .sk-dark     { border-color: #2c2c4a;   background: rgba(44,44,74,0.25); }
+    .sk-dark:hover:not(:disabled) { border-color: #6c6c9a; background: rgba(44,44,74,0.45); }
+    .sk-fighting { border-color: #7b341e55; background: rgba(123,52,30,0.12); }
+    .sk-fighting:hover:not(:disabled) { border-color: #c0392b; background: rgba(123,52,30,0.22); }
+    .sk-steel    { border-color: #5d6d7e55; background: rgba(93,109,126,0.12); }
+    .sk-steel:hover:not(:disabled) { border-color: #95a5a6; background: rgba(93,109,126,0.22); }
+    .sk-dragon   { border-color: #1a237e55; background: rgba(26,35,126,0.12); }
+    .sk-dragon:hover:not(:disabled) { border-color: #3f51b5; background: rgba(26,35,126,0.22); }
+    .sk-normal   { border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.06); }
+    .sk-normal:hover:not(:disabled) { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.12); }
+
+    /* Action buttons row */
+    .action-row { display: flex; gap: 10px; margin-top: 10px; }
+    .flee-btn {
+      flex: 1; background: rgba(180,30,30,0.25); border: 2px solid #f8717155;
+      color: #f87171; font-family: 'Press Start 2P', monospace; font-size: 9px;
+      padding: 12px; border-radius: 12px; cursor: pointer; transition: all 0.15s;
+    }
+    .flee-btn:hover { background: rgba(180,30,30,0.45); border-color: #f87171; }
+
+    /* ════════════ RESULT OVERLAY ════════════ */
+    #result-overlay {
+      display: none; position: fixed; inset: 0; z-index: 50;
+      background: rgba(0,0,0,0.78); backdrop-filter: blur(6px);
+      align-items: center; justify-content: center;
+    }
+    #result-overlay.show { display: flex; }
+    .result-card {
+      background: linear-gradient(135deg, #1a1a35, #252545);
+      border-radius: 26px; padding: 36px 28px; text-align: center;
+      max-width: 340px; width: 90%;
+      animation: pop-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes pop-in {
+      from { transform: scale(0.3) rotate(-8deg); opacity: 0; }
+      to   { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .result-icon  { font-size: 56px; margin-bottom: 12px; }
+    .result-title { font-family: 'Press Start 2P', monospace; font-size: 14px; margin-bottom: 8px; }
+    .result-sub   { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 24px; line-height: 1.6; }
+    .result-xp    { font-family: 'Press Start 2P', monospace; font-size: 10px; color: #fcd34d; margin-bottom: 22px; }
+    .result-btns  { display: flex; flex-direction: column; gap: 10px; }
+    .result-btn {
+      padding: 13px; border-radius: 12px; font-family: 'Press Start 2P', monospace;
+      font-size: 9px; cursor: pointer; border: none;
+    }
+    .rbtn-again { background: linear-gradient(135deg, #FFD700, #f97316); color: #000; }
+    .rbtn-pick  { background: rgba(255,255,255,0.1); color: #fff; border: 2px solid rgba(255,255,255,0.2); }
+    .rbtn-home  { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5); border: 2px solid rgba(255,255,255,0.1); }
+
+    /* Floating damage number */
+    .dmg-float {
+      position: fixed; pointer-events: none; z-index: 60;
+      font-family: 'Press Start 2P', monospace; font-size: 15px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+      animation: float-up 1s ease forwards;
+    }
+    @keyframes float-up {
+      0%   { opacity: 1; transform: translateY(0)   scale(1); }
+      60%  { opacity: 1; transform: translateY(-45px) scale(1.2); }
+      100% { opacity: 0; transform: translateY(-80px) scale(0.8); }
+    }
+
+    /* Turn indicator */
+    .turn-badge {
+      display: inline-block; font-size: 8px;
+      font-family: 'Press Start 2P', monospace;
+      padding: 4px 12px; border-radius: 999px; margin-bottom: 10px;
+    }
+    .turn-player { background: rgba(255,215,0,0.15); color: #FFD700; border: 1px solid #FFD70055; }
+    .turn-enemy  { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid #f8717155; }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%     { transform: translateX(-8px); }
+      40%     { transform: translateX(8px); }
+      60%     { transform: translateX(-5px); }
+      80%     { transform: translateX(5px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+  </style>
+</head>
+<body>
+<div class="stars"></div>
+<div class="page">
+
+  <a href="index.html" class="back-btn press">← Back</a>
+
+  <!-- ════════════ PICKER SCREEN ════════════ -->
+  <div id="picker-screen">
+    <div class="picker-title press">Choose Your Pokémon</div>
+    <div class="picker-sub">Pick one from your owned cards to battle!</div>
+    <div class="picker-grid" id="picker-grid"></div>
+    <button class="start-btn press" id="start-btn" disabled onclick="startBattle()">⚔️ Battle!</button>
+  </div>
+
+  <!-- ════════════ BATTLE SCREEN ════════════ -->
+  <div id="battle-screen">
+
+    <div id="turn-indicator" class="turn-badge turn-player">YOUR TURN</div>
+
+    <!-- Field -->
+    <div class="battle-field">
+      <!-- Enemy -->
+      <div class="enemy-row">
+        <div class="combatant-hud" id="enemy-hud">
+          <div class="hud-name" id="enemy-name">???</div>
+          <div class="hud-level" id="enemy-level">Lv.??</div>
+          <div class="hp-label"><span>HP</span><span id="enemy-hp-num">—</span></div>
+          <div class="hp-bar-bg"><div class="hp-bar-fill" id="enemy-hp-bar" style="width:100%;background:#4ade80"></div></div>
+        </div>
+        <div class="sprite-wrap enemy-sprite-wrap" id="enemy-sprite-wrap">
+          <div class="status-badge" id="enemy-status" style="display:none"></div>
+          <img class="battle-sprite" id="enemy-sprite" src="" alt="enemy" />
+        </div>
+      </div>
+
+      <!-- Player -->
+      <div class="player-row">
+        <div class="combatant-hud" id="player-hud">
+          <div class="hud-name" id="player-name">—</div>
+          <div class="hud-level" id="player-level">Lv.1</div>
+          <div class="hp-label"><span>HP</span><span id="player-hp-num">—</span></div>
+          <div class="hp-bar-bg"><div class="hp-bar-fill" id="player-hp-bar" style="width:100%;background:#4ade80"></div></div>
+        </div>
+        <div class="sprite-wrap player-sprite-wrap" id="player-sprite-wrap">
+          <div class="status-badge" id="player-status" style="display:none"></div>
+          <img class="battle-sprite" id="player-sprite" src="" alt="player" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="battle-log" id="battle-log">Battle start!</div>
+
+    <!-- Skills -->
+    <div class="skills-grid" id="skills-grid"></div>
+
+    <!-- Actions -->
+    <div class="action-row">
+      <button class="flee-btn" onclick="flee()">🏃 Run Away</button>
+    </div>
+
+  </div><!-- end battle-screen -->
+
+</div><!-- end page -->
+
+<!-- Result overlay -->
+<div id="result-overlay">
+  <div class="result-card" id="result-card">
+    <div class="result-icon" id="result-icon">🏆</div>
+    <div class="result-title press" id="result-title">Victory!</div>
+    <div class="result-sub" id="result-sub"></div>
+    <div class="result-xp" id="result-xp"></div>
+    <div class="result-btns">
+      <button class="result-btn rbtn-again" onclick="rematch()">⚔️ Battle Again</button>
+      <button class="result-btn rbtn-pick"  onclick="backToPicker()">🎮 Pick Different</button>
+      <button class="result-btn rbtn-home"  onclick="location.href='index.html'">🏠 Home</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════
+   ALL MEGA EVOLUTION CARDS (Pokémon only, no trainers)
+═══════════════════════════════════ */
+const ALL_CARDS = [
+  { id:'meg1-1',   name:'Bulbasaur',         num:1,   rarity:'Common',      type:'Grass',     php:25   },
+  { id:'meg1-2',   name:'Ivysaur',           num:2,   rarity:'Uncommon',    type:'Grass',     php:50   },
+  { id:'meg1-3',   name:'Mega Venusaur ex',  num:3,   rarity:'Double Rare', type:'Grass',     php:950  },
+  { id:'meg1-4',   name:'Exeggcute',         num:102, rarity:'Common',      type:'Grass',     php:20   },
+  { id:'meg1-5',   name:'Exeggutor',         num:103, rarity:'Rare',        type:'Grass',     php:180  },
+  { id:'meg1-6',   name:'Tangela',           num:114, rarity:'Common',      type:'Grass',     php:20   },
+  { id:'meg1-7',   name:'Tangrowth',         num:465, rarity:'Rare',        type:'Grass',     php:160  },
+  { id:'meg1-8',   name:'Chikorita',         num:152, rarity:'Common',      type:'Grass',     php:20   },
+  { id:'meg1-9',   name:'Bayleef',           num:153, rarity:'Uncommon',    type:'Grass',     php:40   },
+  { id:'meg1-10',  name:'Meganium',          num:154, rarity:'Rare',        type:'Grass',     php:250  },
+  { id:'meg1-11',  name:'Shuckle',           num:213, rarity:'Common',      type:'Grass',     php:30   },
+  { id:'meg1-12',  name:'Celebi',            num:251, rarity:'Rare',        type:'Psychic',   php:380  },
+  { id:'meg1-13',  name:'Seedot',            num:273, rarity:'Common',      type:'Grass',     php:20   },
+  { id:'meg1-14',  name:'Nuzleaf',           num:274, rarity:'Uncommon',    type:'Grass',     php:35   },
+  { id:'meg1-15',  name:'Shiftry',           num:275, rarity:'Rare',        type:'Grass',     php:150  },
+  { id:'meg1-16',  name:'Nincada',           num:290, rarity:'Common',      type:'Grass',     php:20   },
+  { id:'meg1-17',  name:'Ninjask',           num:291, rarity:'Uncommon',    type:'Grass',     php:45   },
+  { id:'meg1-18',  name:'Dhelmise',          num:781, rarity:'Rare',        type:'Grass',     php:200  },
+  { id:'meg1-19',  name:'Vulpix',            num:37,  rarity:'Common',      type:'Fire',      php:25   },
+  { id:'meg1-20',  name:'Ninetales',         num:38,  rarity:'Rare',        type:'Fire',      php:280  },
+  { id:'meg1-21',  name:'Numel',             num:322, rarity:'Common',      type:'Fire',      php:20   },
+  { id:'meg1-22',  name:'Mega Camerupt ex',  num:323, rarity:'Double Rare', type:'Fire',      php:880  },
+  { id:'meg1-23',  name:'Litleo',            num:667, rarity:'Common',      type:'Fire',      php:20   },
+  { id:'meg1-24',  name:'Pyroar',            num:668, rarity:'Rare',        type:'Fire',      php:160  },
+  { id:'meg1-25',  name:'Volcanion',         num:721, rarity:'Rare',        type:'Fire',      php:300  },
+  { id:'meg1-26',  name:'Scorbunny',         num:813, rarity:'Common',      type:'Fire',      php:30   },
+  { id:'meg1-27',  name:'Raboot',            num:814, rarity:'Uncommon',    type:'Fire',      php:50   },
+  { id:'meg1-28',  name:'Cinderace',         num:815, rarity:'Rare',        type:'Fire',      php:250  },
+  { id:'meg1-29',  name:'Sizzlipede',        num:850, rarity:'Common',      type:'Fire',      php:20   },
+  { id:'meg1-30',  name:'Centiskorch',       num:851, rarity:'Rare',        type:'Fire',      php:170  },
+  { id:'meg1-31',  name:'Chi-Yu',            num:1007,rarity:'Rare',        type:'Fire',      php:350  },
+  { id:'meg1-32',  name:'Mantine',           num:226, rarity:'Common',      type:'Water',     php:20   },
+  { id:'meg1-33',  name:'Corphish',          num:341, rarity:'Common',      type:'Water',     php:20   },
+  { id:'meg1-34',  name:'Kyogre',            num:382, rarity:'Rare',        type:'Water',     php:480  },
+  { id:'meg1-35',  name:'Snover',            num:459, rarity:'Common',      type:'Water',     php:20   },
+  { id:'meg1-36',  name:'Mega Abomasnow ex', num:460, rarity:'Double Rare', type:'Water',     php:850  },
+  { id:'meg1-37',  name:'Clauncher',         num:692, rarity:'Common',      type:'Water',     php:20   },
+  { id:'meg1-38',  name:'Clawitzer',         num:693, rarity:'Rare',        type:'Water',     php:180  },
+  { id:'meg1-39',  name:'Sobble',            num:816, rarity:'Common',      type:'Water',     php:25   },
+  { id:'meg1-40',  name:'Drizzile',          num:817, rarity:'Uncommon',    type:'Water',     php:45   },
+  { id:'meg1-41',  name:'Inteleon',          num:818, rarity:'Rare',        type:'Water',     php:220  },
+  { id:'meg1-42',  name:'Snom',              num:872, rarity:'Common',      type:'Water',     php:20   },
+  { id:'meg1-43',  name:'Frosmoth',          num:873, rarity:'Rare',        type:'Water',     php:160  },
+  { id:'meg1-44',  name:'Eiscue',            num:875, rarity:'Common',      type:'Water',     php:20   },
+  { id:'meg1-45',  name:'Magnemite',         num:81,  rarity:'Common',      type:'Electric',  php:25   },
+  { id:'meg1-46',  name:'Magneton',          num:82,  rarity:'Uncommon',    type:'Electric',  php:45   },
+  { id:'meg1-47',  name:'Magnezone',         num:462, rarity:'Rare',        type:'Electric',  php:200  },
+  { id:'meg1-48',  name:'Raikou',            num:243, rarity:'Rare',        type:'Electric',  php:380  },
+  { id:'meg1-49',  name:'Electrike',         num:309, rarity:'Common',      type:'Electric',  php:20   },
+  { id:'meg1-50',  name:'Mega Manectric ex', num:310, rarity:'Double Rare', type:'Electric',  php:900  },
+  { id:'meg1-51',  name:'Pachirisu',         num:417, rarity:'Common',      type:'Electric',  php:30   },
+  { id:'meg1-52',  name:'Helioptile',        num:694, rarity:'Common',      type:'Electric',  php:20   },
+  { id:'meg1-53',  name:'Heliolisk',         num:695, rarity:'Rare',        type:'Electric',  php:180  },
+  { id:'meg1-54',  name:'Abra',              num:63,  rarity:'Common',      type:'Psychic',   php:20   },
+  { id:'meg1-55',  name:'Kadabra',           num:64,  rarity:'Uncommon',    type:'Psychic',   php:50   },
+  { id:'meg1-56',  name:'Alakazam',          num:65,  rarity:'Rare',        type:'Psychic',   php:280  },
+  { id:'meg1-57',  name:'Jynx',              num:124, rarity:'Rare',        type:'Psychic',   php:150  },
+  { id:'meg1-58',  name:'Ralts',             num:280, rarity:'Common',      type:'Psychic',   php:20   },
+  { id:'meg1-59',  name:'Kirlia',            num:281, rarity:'Uncommon',    type:'Psychic',   php:40   },
+  { id:'meg1-60',  name:'Mega Gardevoir ex', num:282, rarity:'Double Rare', type:'Psychic',   php:2200 },
+  { id:'meg1-61',  name:'Shedinja',          num:292, rarity:'Rare',        type:'Psychic',   php:320  },
+  { id:'meg1-62',  name:'Spoink',            num:325, rarity:'Common',      type:'Psychic',   php:20   },
+  { id:'meg1-63',  name:'Grumpig',           num:326, rarity:'Rare',        type:'Psychic',   php:150  },
+  { id:'meg1-64',  name:'Xerneas',           num:716, rarity:'Rare',        type:'Psychic',   php:350  },
+  { id:'meg1-65',  name:'Greavard',          num:926, rarity:'Common',      type:'Psychic',   php:20   },
+  { id:'meg1-66',  name:'Houndstone',        num:927, rarity:'Rare',        type:'Psychic',   php:200  },
+  { id:'meg1-67',  name:'Gimmighoul',        num:999, rarity:'Common',      type:'Psychic',   php:30   },
+  { id:'meg1-68',  name:'Sandshrew',         num:27,  rarity:'Common',      type:'Fighting',  php:20   },
+  { id:'meg1-69',  name:'Sandslash',         num:28,  rarity:'Rare',        type:'Fighting',  php:160  },
+  { id:'meg1-70',  name:'Onix',              num:95,  rarity:'Common',      type:'Fighting',  php:25   },
+  { id:'meg1-71',  name:'Tyrogue',           num:236, rarity:'Common',      type:'Fighting',  php:20   },
+  { id:'meg1-72',  name:'Makuhita',          num:296, rarity:'Common',      type:'Fighting',  php:20   },
+  { id:'meg1-73',  name:'Hariyama',          num:297, rarity:'Rare',        type:'Fighting',  php:150  },
+  { id:'meg1-74',  name:'Lunatone',          num:337, rarity:'Rare',        type:'Psychic',   php:160  },
+  { id:'meg1-75',  name:'Solrock',           num:338, rarity:'Rare',        type:'Fighting',  php:160  },
+  { id:'meg1-76',  name:'Riolu',             num:447, rarity:'Common',      type:'Fighting',  php:30   },
+  { id:'meg1-77',  name:'Mega Lucario ex',   num:448, rarity:'Double Rare', type:'Fighting',  php:1800 },
+  { id:'meg1-78',  name:'Croagunk',          num:453, rarity:'Common',      type:'Psychic',   php:20   },
+  { id:'meg1-79',  name:'Toxicroak',         num:454, rarity:'Rare',        type:'Psychic',   php:160  },
+  { id:'meg1-80',  name:'Marshadow',         num:802, rarity:'Rare',        type:'Fighting',  php:420  },
+  { id:'meg1-81',  name:'Stonjourner',       num:896, rarity:'Rare',        type:'Fighting',  php:150  },
+  { id:'meg1-82',  name:'Nacli',             num:932, rarity:'Common',      type:'Fighting',  php:20   },
+  { id:'meg1-83',  name:'Naclstack',         num:933, rarity:'Uncommon',    type:'Fighting',  php:35   },
+  { id:'meg1-84',  name:'Garganacl',         num:934, rarity:'Rare',        type:'Fighting',  php:220  },
+  { id:'meg1-85',  name:'Crawdaunt',         num:342, rarity:'Rare',        type:'Dark',      php:180  },
+  { id:'meg1-86',  name:'Mega Absol ex',     num:359, rarity:'Double Rare', type:'Dark',      php:1200 },
+  { id:'meg1-87',  name:'Spiritomb',         num:442, rarity:'Rare',        type:'Psychic',   php:280  },
+  { id:'meg1-88',  name:'Yveltal',           num:717, rarity:'Rare',        type:'Dark',      php:350  },
+  { id:'meg1-89',  name:'Nickit',            num:827, rarity:'Common',      type:'Dark',      php:20   },
+  { id:'meg1-90',  name:'Thievul',           num:828, rarity:'Rare',        type:'Dark',      php:160  },
+  { id:'meg1-91',  name:'Shroodle',          num:944, rarity:'Common',      type:'Dark',      php:20   },
+  { id:'meg1-92',  name:'Grafaiai',          num:945, rarity:'Rare',        type:'Dark',      php:180  },
+  { id:'meg1-93',  name:'Steelix',           num:208, rarity:'Rare',        type:'Steel',     php:220  },
+  { id:'meg1-94',  name:'Mega Mawile ex',    num:303, rarity:'Double Rare', type:'Steel',     php:950  },
+  { id:'meg1-95',  name:'Dialga',            num:483, rarity:'Rare',        type:'Steel',     php:420  },
+  { id:'meg1-96',  name:'Tinkatink',         num:957, rarity:'Common',      type:'Steel',     php:20   },
+  { id:'meg1-97',  name:'Tinkatuff',         num:958, rarity:'Uncommon',    type:'Steel',     php:40   },
+  { id:'meg1-98',  name:'Tinkaton',          num:959, rarity:'Rare',        type:'Steel',     php:280  },
+  { id:'meg1-99',  name:'Gholdengo',         num:1000,rarity:'Rare',        type:'Steel',     php:380  },
+  { id:'meg1-100', name:'Mega Latias ex',    num:380, rarity:'Double Rare', type:'Dragon',    php:1400 },
+  { id:'meg1-101', name:'Latios',            num:381, rarity:'Rare',        type:'Dragon',    php:350  },
+  { id:'meg1-102', name:'Spearow',           num:21,  rarity:'Common',      type:'Colorless', php:20   },
+  { id:'meg1-103', name:'Fearow',            num:22,  rarity:'Rare',        type:'Colorless', php:150  },
+  { id:'meg1-104', name:'Mega Kangaskhan ex',num:115, rarity:'Double Rare', type:'Colorless', php:1100 },
+  { id:'meg1-105', name:'Delibird',          num:225, rarity:'Common',      type:'Water',     php:25   },
+  { id:'meg1-106', name:'Miltank',           num:241, rarity:'Common',      type:'Colorless', php:25   },
+  { id:'meg1-107', name:'Buneary',           num:427, rarity:'Common',      type:'Colorless', php:20   },
+  { id:'meg1-108', name:'Lopunny',           num:428, rarity:'Rare',        type:'Colorless', php:160  },
+  { id:'meg1-109', name:'Yungoos',           num:734, rarity:'Common',      type:'Colorless', php:20   },
+  { id:'meg1-110', name:'Gumshoos',          num:735, rarity:'Rare',        type:'Colorless', php:150  },
+  { id:'meg1-111', name:'Stufful',           num:759, rarity:'Common',      type:'Colorless', php:20   },
+  { id:'meg1-112', name:'Bewear',            num:760, rarity:'Rare',        type:'Colorless', php:180  },
+];
+
+/* ═══════════════════════════════════
+   TYPE CHART  (attacker → defender multiplier)
+═══════════════════════════════════ */
+const TYPE_CHART = {
+  Fire:     { Grass:2, Steel:2, Water:0.5, Fire:0.5, Dragon:0.5 },
+  Water:    { Fire:2, Fighting:2, Grass:0.5, Water:0.5, Dragon:0.5 },
+  Grass:    { Water:2, Fighting:2, Fire:0.5, Grass:0.5, Psychic:0.5 },
+  Electric: { Water:2, Colorless:2, Grass:0.5, Electric:0.5, Dragon:0.5 },
+  Psychic:  { Fighting:2, Dark:0, Psychic:0.5, Steel:0.5 },
+  Dark:     { Psychic:2, Fighting:0.5, Dark:0.5, Steel:0.5 },
+  Fighting: { Dark:2, Steel:2, Psychic:0.5, Colorless:0.5 },
+  Steel:    { Grass:2, Psychic:2, Fire:0.5, Water:0.5, Steel:0.5 },
+  Dragon:   { Dragon:2, Steel:0.5 },
+  Colorless:{ },
+};
+
+/* ═══════════════════════════════════
+   SKILL TEMPLATES  keyed by type
+═══════════════════════════════════ */
+const SKILL_POOLS = {
+  Grass:    [
+    { name:'Vine Whip',    type:'Grass',    power:40, pp:25, effect:null },
+    { name:'Razor Leaf',   type:'Grass',    power:55, pp:25, effect:null },
+    { name:'Seed Bomb',    type:'Grass',    power:80, pp:15, effect:null },
+    { name:'Leech Seed',   type:'Grass',    power:0,  pp:10, effect:'leech' },
+    { name:'Solar Beam',   type:'Grass',    power:120,pp:10, effect:null },
+    { name:'Synthesis',    type:'Grass',    power:0,  pp:5,  effect:'heal' },
+  ],
+  Fire:     [
+    { name:'Ember',        type:'Fire',     power:40, pp:25, effect:null },
+    { name:'Fire Fang',    type:'Fire',     power:65, pp:15, effect:'burn' },
+    { name:'Flamethrower', type:'Fire',     power:90, pp:15, effect:'burn' },
+    { name:'Overheat',     type:'Fire',     power:130,pp:5,  effect:null },
+    { name:'Will-O-Wisp',  type:'Fire',     power:0,  pp:15, effect:'burn' },
+    { name:'Heat Wave',    type:'Fire',     power:95, pp:10, effect:null },
+  ],
+  Water:    [
+    { name:'Water Gun',    type:'Water',    power:40, pp:25, effect:null },
+    { name:'Bubble Beam',  type:'Water',    power:65, pp:20, effect:null },
+    { name:'Surf',         type:'Water',    power:90, pp:15, effect:null },
+    { name:'Hydro Pump',   type:'Water',    power:110,pp:5,  effect:null },
+    { name:'Aqua Ring',    type:'Water',    power:0,  pp:20, effect:'aquaring' },
+    { name:'Blizzard',     type:'Water',    power:110,pp:5,  effect:'freeze' },
+  ],
+  Electric: [
+    { name:'Thunder Shock', type:'Electric', power:40, pp:30, effect:null },
+    { name:'Spark',         type:'Electric', power:65, pp:20, effect:'par' },
+    { name:'Thunderbolt',   type:'Electric', power:90, pp:15, effect:'par' },
+    { name:'Thunder',       type:'Electric', power:110,pp:10, effect:'par' },
+    { name:'Volt Switch',   type:'Electric', power:70, pp:20, effect:null },
+    { name:'Discharge',     type:'Electric', power:80, pp:15, effect:'par' },
+  ],
+  Psychic:  [
+    { name:'Confusion',    type:'Psychic',  power:50, pp:25, effect:null },
+    { name:'Psybeam',      type:'Psychic',  power:65, pp:20, effect:null },
+    { name:'Psychic',      type:'Psychic',  power:90, pp:10, effect:null },
+    { name:'Future Sight', type:'Psychic',  power:120,pp:10, effect:null },
+    { name:'Calm Mind',    type:'Psychic',  power:0,  pp:20, effect:'buff' },
+    { name:'Recover',      type:'Psychic',  power:0,  pp:10, effect:'heal' },
+  ],
+  Dark:     [
+    { name:'Bite',         type:'Dark',     power:60, pp:25, effect:null },
+    { name:'Crunch',       type:'Dark',     power:80, pp:15, effect:null },
+    { name:'Shadow Ball',  type:'Dark',     power:80, pp:15, effect:null },
+    { name:'Night Slash',  type:'Dark',     power:70, pp:15, effect:'crit' },
+    { name:'Foul Play',    type:'Dark',     power:95, pp:15, effect:null },
+    { name:'Dark Pulse',   type:'Dark',     power:80, pp:15, effect:null },
+  ],
+  Fighting: [
+    { name:'Karate Chop',  type:'Fighting', power:50, pp:25, effect:null },
+    { name:'Low Kick',     type:'Fighting', power:65, pp:20, effect:null },
+    { name:'Close Combat', type:'Fighting', power:120,pp:5,  effect:null },
+    { name:'Aura Sphere',  type:'Fighting', power:80, pp:20, effect:null },
+    { name:'Bulk Up',      type:'Fighting', power:0,  pp:20, effect:'buff' },
+    { name:'Cross Chop',   type:'Fighting', power:100,pp:5,  effect:null },
+  ],
+  Steel:    [
+    { name:'Metal Claw',   type:'Steel',    power:50, pp:35, effect:null },
+    { name:'Iron Head',    type:'Steel',    power:80, pp:15, effect:null },
+    { name:'Flash Cannon', type:'Steel',    power:80, pp:10, effect:null },
+    { name:'Meteor Mash',  type:'Steel',    power:90, pp:10, effect:'buff' },
+    { name:'Iron Defense', type:'Steel',    power:0,  pp:15, effect:'buff' },
+    { name:'Steel Beam',   type:'Steel',    power:140,pp:5,  effect:null },
+  ],
+  Dragon:   [
+    { name:'Dragon Rage',  type:'Dragon',   power:50, pp:10, effect:null },
+    { name:'Dragon Claw',  type:'Dragon',   power:80, pp:15, effect:null },
+    { name:'Dragon Pulse', type:'Dragon',   power:85, pp:10, effect:null },
+    { name:'Outrage',      type:'Dragon',   power:120,pp:10, effect:null },
+    { name:'Dragon Dance', type:'Dragon',   power:0,  pp:20, effect:'buff' },
+    { name:'Draco Meteor', type:'Dragon',   power:130,pp:5,  effect:null },
+  ],
+  Colorless:[
+    { name:'Scratch',      type:'Colorless',power:40, pp:35, effect:null },
+    { name:'Slash',        type:'Colorless',power:70, pp:20, effect:'crit' },
+    { name:'Body Slam',    type:'Colorless',power:85, pp:15, effect:'par' },
+    { name:'Hyper Beam',   type:'Colorless',power:150,pp:5,  effect:null },
+    { name:'Double-Edge',  type:'Colorless',power:120,pp:15, effect:'recoil' },
+    { name:'Quick Attack', type:'Colorless',power:40, pp:30, effect:null },
+  ],
+};
+
+const TYPE_EMO = {
+  Fire:'🔥', Water:'💧', Grass:'🌿', Electric:'⚡', Psychic:'🔮',
+  Dark:'🌑', Dragon:'🐉', Fighting:'🥊', Steel:'⚙️', Colorless:'⭐',
+};
+
+/* ═══════════════════════════════════
+   STAT HELPERS
+═══════════════════════════════════ */
+const RARITY_TIER = { 'Common':1,'Uncommon':2,'Rare':3,'Double Rare':4,'Illus. Rare':3,'Ultra Rare':5,'Special Art':5,'Hyper Rare':6 };
+
+function calcStats(card) {
+  const t = RARITY_TIER[card.rarity] || 1;
+  return {
+    maxHp: 60 + t * 25 + Math.floor(Math.random() * 10),
+    atk:   30 + t * 12,
+    def:   20 + t * 8,
+    spd:   20 + t * 5 + Math.floor(Math.random() * 10),
+    level: 5 + t * 8 + Math.floor(Math.random() * 3),
+  };
+}
+
+function spriteUrl(dex) {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${dex}.png`;
+}
+
+function getSkills(type) {
+  const pool = (SKILL_POOLS[type] || SKILL_POOLS.Colorless).slice();
+  // shuffle
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const skills = pool.slice(0, 3);
+  // always add a Normal move for variety
+  skills.push({ name:'Tackle', type:'Colorless', power:40, pp:35, effect:null });
+  return skills.map(s => ({ ...s, maxPp: s.pp, curPp: s.pp }));
+}
+
+/* ═══════════════════════════════════
+   STATE
+═══════════════════════════════════ */
+let owned = {};
+let playerPoke  = null;  // { card, stats, hp, skills, status, statusTurns, atkBuff }
+let enemyPoke   = null;
+let playerTurn  = true;
+let battling    = false;
+let selectedCardId = null;
+let wins = 0, losses = 0;
+
+function loadOwned() {
+  try { owned = JSON.parse(localStorage.getItem('poke_owned') || '{}'); } catch(e) { owned = {}; }
+}
+
+/* ═══════════════════════════════════
+   PICKER
+═══════════════════════════════════ */
+function buildPicker() {
+  const grid = document.getElementById('picker-grid');
+  const ownedCards = ALL_CARDS.filter(c => owned[c.id]);
+
+  if (!ownedCards.length) {
+    grid.innerHTML = '';
+    grid.insertAdjacentHTML('afterend', `<div class="no-owned-msg">
+      You don't own any Pokémon cards yet!<br><br>
+      Go to the <a href="mega-evolution.html" style="color:#FFD700">Mega Evolution binder</a> and mark some cards as owned, or use the <a href="camera.html" style="color:#FFD700">AR Finder</a> to catch them!
+    </div>`);
+    document.getElementById('start-btn').style.display = 'none';
+    return;
+  }
+
+  grid.innerHTML = ownedCards.map(card => {
+    const emo = TYPE_EMO[card.type] || '⭐';
+    const tier = RARITY_TIER[card.rarity] || 1;
+    const hp = 60 + tier * 25;
+    return `<div class="pick-card" id="pick-${card.id}" onclick="selectCard('${card.id}')">
+      <span class="pick-emo">${emo}</span>
+      <div class="pick-name">${card.name}</div>
+      <div class="pick-type">${card.type}</div>
+      <div class="pick-hp">HP ~${hp}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectCard(id) {
+  document.querySelectorAll('.pick-card').forEach(el => el.classList.remove('selected'));
+  const el = document.getElementById('pick-' + id);
+  if (el) el.classList.add('selected');
+  selectedCardId = id;
+  document.getElementById('start-btn').disabled = false;
+}
+
+/* ═══════════════════════════════════
+   BUILD COMBATANT
+═══════════════════════════════════ */
+function buildCombatant(card) {
+  const stats = calcStats(card);
+  return {
+    card,
+    stats,
+    hp: stats.maxHp,
+    skills: getSkills(card.type),
+    status: null,      // null | 'psn' | 'brn' | 'par' | 'slp'
+    statusTurns: 0,
+    atkBuff: 0,        // +1/+2 stages
+    leech: false,
+    aquaring: false,
+  };
+}
+
+/* ═══════════════════════════════════
+   START BATTLE
+═══════════════════════════════════ */
+function startBattle() {
+  if (!selectedCardId) return;
+  const card = ALL_CARDS.find(c => c.id === selectedCardId);
+  if (!card) return;
+
+  // Pick random enemy from the full pool (weighted by rarity, skewed to not always cream player)
+  const pool = ALL_CARDS.filter(c => c.id !== selectedCardId);
+  const enemy = pool[Math.floor(Math.random() * pool.length)];
+
+  playerPoke = buildCombatant(card);
+  enemyPoke  = buildCombatant(enemy);
+  playerTurn = playerPoke.stats.spd >= enemyPoke.stats.spd;
+  battling   = true;
+
+  document.getElementById('picker-screen').style.display = 'none';
+  document.getElementById('battle-screen').style.display = 'block';
+
+  // Set sprites
+  document.getElementById('player-sprite').src = spriteUrl(card.num);
+  document.getElementById('enemy-sprite').src  = spriteUrl(enemy.num);
+
+  // Build skill buttons
+  renderSkills();
+  updateHUD();
+  setLog(`A wild <b>${enemy.name}</b> appeared! ${playerTurn ? 'You go first!' : 'Enemy goes first!'}`);
+
+  if (!playerTurn) {
+    disableSkills(true);
+    setTimeout(enemyTurn, 1200);
+  } else {
+    setTurnBadge(true);
+  }
+}
+
+/* ═══════════════════════════════════
+   RENDER SKILLS
+═══════════════════════════════════ */
+function renderSkills() {
+  const grid = document.getElementById('skills-grid');
+  grid.innerHTML = playerPoke.skills.map((sk, i) => {
+    const tc = 'sk-' + (sk.type || 'normal').toLowerCase();
+    const emo = TYPE_EMO[sk.type] || '⭐';
+    return `<button class="skill-btn ${tc}" id="skill-${i}" onclick="useSkill(${i})">
+      <span class="skill-name">${emo} ${sk.name}</span>
+      <span class="skill-meta">
+        <span>${sk.power ? 'PWR ' + sk.power : 'Status'}</span>
+        <span>${sk.type}</span>
+      </span>
+      <span class="skill-pp">PP: <span id="pp-${i}">${sk.curPp}</span>/${sk.maxPp}</span>
+    </button>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════
+   HUD UPDATE
+═══════════════════════════════════ */
+function updateHUD() {
+  const p = playerPoke, e = enemyPoke;
+
+  document.getElementById('player-name').textContent  = p.card.name;
+  document.getElementById('player-level').textContent = 'Lv.' + p.stats.level;
+  document.getElementById('player-hp-num').textContent = Math.max(0, p.hp) + ' / ' + p.stats.maxHp;
+  const ppct = Math.max(0, p.hp / p.stats.maxHp * 100);
+  const pbar = document.getElementById('player-hp-bar');
+  pbar.style.width = ppct + '%';
+  pbar.style.background = ppct > 50 ? '#4ade80' : ppct > 20 ? '#facc15' : '#f87171';
+
+  document.getElementById('enemy-name').textContent  = e.card.name;
+  document.getElementById('enemy-level').textContent = 'Lv.' + e.stats.level;
+  document.getElementById('enemy-hp-num').textContent = Math.max(0, e.hp) + ' / ' + e.stats.maxHp;
+  const epct = Math.max(0, e.hp / e.stats.maxHp * 100);
+  const ebar = document.getElementById('enemy-hp-bar');
+  ebar.style.width = epct + '%';
+  ebar.style.background = epct > 50 ? '#4ade80' : epct > 20 ? '#facc15' : '#f87171';
+
+  // Status badges
+  showStatus('player', p.status);
+  showStatus('enemy',  e.status);
+
+  // PP
+  playerPoke.skills.forEach((sk, i) => {
+    const ppEl = document.getElementById('pp-' + i);
+    if (ppEl) ppEl.textContent = sk.curPp;
+    const btn = document.getElementById('skill-' + i);
+    if (btn) btn.disabled = sk.curPp <= 0 || !playerTurn;
+  });
+}
+
+function showStatus(who, status) {
+  const el = document.getElementById(who + '-status');
+  if (!status) { el.style.display = 'none'; return; }
+  const MAP = { psn:'☠️ PSN', brn:'🔥 BRN', par:'⚡ PAR', slp:'💤 SLP' };
+  const CLS = { psn:'status-psn', brn:'status-brn', par:'status-par', slp:'status-slp' };
+  el.style.display = 'block';
+  el.textContent   = MAP[status] || status;
+  el.className = 'status-badge ' + (CLS[status] || '');
+}
+
+function setTurnBadge(isPlayer) {
+  const el = document.getElementById('turn-indicator');
+  el.textContent  = isPlayer ? 'YOUR TURN' : 'ENEMY TURN';
+  el.className    = 'turn-badge ' + (isPlayer ? 'turn-player' : 'turn-enemy');
+}
+
+/* ═══════════════════════════════════
+   LOG
+═══════════════════════════════════ */
+function setLog(html) {
+  const el = document.getElementById('battle-log');
+  el.innerHTML = html;
+  el.scrollTop = el.scrollHeight;
+}
+function appendLog(html) {
+  const el = document.getElementById('battle-log');
+  el.innerHTML += '<br>' + html;
+  el.scrollTop = el.scrollHeight;
+}
+
+/* ═══════════════════════════════════
+   DAMAGE CALC
+═══════════════════════════════════ */
+function calcDamage(attacker, skill, defender) {
+  if (!skill.power) return 0;
+  const atkStage = 1 + attacker.atkBuff * 0.5;
+  let base = (attacker.stats.atk * atkStage / defender.stats.def) * (skill.power / 50) * 10;
+  // Type effectiveness
+  const chart = TYPE_CHART[skill.type] || {};
+  const mult = chart[defender.card.type] || 1;
+  base *= mult;
+  // STAB
+  if (skill.type === attacker.card.type) base *= 1.5;
+  // Random variance
+  base *= (0.85 + Math.random() * 0.25);
+  return { dmg: Math.max(1, Math.round(base)), mult };
+}
+
+/* ═══════════════════════════════════
+   FLOATING NUMBER
+═══════════════════════════════════ */
+function showFloat(text, color, targetId) {
+  const el = document.getElementById(targetId + '-sprite');
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  const div = document.createElement('div');
+  div.className = 'dmg-float';
+  div.style.color = color;
+  div.style.left  = (rect.left + rect.width/2 - 20) + 'px';
+  div.style.top   = (rect.top  - 10) + 'px';
+  div.textContent = text;
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 1100);
+}
+
+/* ═══════════════════════════════════
+   APPLY EFFECT
+═══════════════════════════════════ */
+function applyEffect(skill, attacker, defender, defWho) {
+  let html = '';
+  switch (skill.effect) {
+    case 'burn':
+      if (!defender.status && Math.random() < 0.3) {
+        defender.status = 'brn'; defender.statusTurns = 0;
+        html += ` <span class="log-status">${defender.card.name} was burned!</span>`;
+      }
+      break;
+    case 'par':
+      if (!defender.status && Math.random() < 0.3) {
+        defender.status = 'par'; defender.statusTurns = 0;
+        html += ` <span class="log-status">${defender.card.name} is paralyzed!</span>`;
+      }
+      break;
+    case 'psn':
+      if (!defender.status && Math.random() < 0.4) {
+        defender.status = 'psn'; defender.statusTurns = 0;
+        html += ` <span class="log-status">${defender.card.name} was poisoned!</span>`;
+      }
+      break;
+    case 'freeze':
+      if (!defender.status && Math.random() < 0.15) {
+        defender.status = 'slp'; defender.statusTurns = 2;
+        html += ` <span class="log-status">${defender.card.name} was frozen solid!</span>`;
+      }
+      break;
+    case 'heal': {
+      const healAmt = Math.round(attacker.stats.maxHp * 0.4);
+      attacker.hp = Math.min(attacker.stats.maxHp, attacker.hp + healAmt);
+      showFloat('+' + healAmt, '#4ade80', attacker === playerPoke ? 'player' : 'enemy');
+      html += ` <span class="log-heal">${attacker.card.name} recovered ${healAmt} HP!</span>`;
+      break;
+    }
+    case 'leech':
+      attacker.leech = true;
+      html += ` <span class="log-status">Leech Seed was planted on ${defender.card.name}!</span>`;
+      break;
+    case 'aquaring':
+      attacker.aquaring = true;
+      html += ` <span class="log-heal">Aqua Ring surrounds ${attacker.card.name}!</span>`;
+      break;
+    case 'buff':
+      attacker.atkBuff = Math.min(2, attacker.atkBuff + 1);
+      html += ` <span class="log-heal">${attacker.card.name}'s Attack rose!</span>`;
+      break;
+    case 'recoil': {
+      const recoil = Math.round(skill.power * 0.25);
+      attacker.hp -= recoil;
+      showFloat('-' + recoil, '#f97316', attacker === playerPoke ? 'player' : 'enemy');
+      html += ` <span class="log-dmg">${attacker.card.name} took ${recoil} recoil damage!</span>`;
+      break;
+    }
+    case 'crit':
+      html += ` <span class="log-crit">High crit ratio!</span>`;
+      break;
+  }
+  return html;
+}
+
+/* ═══════════════════════════════════
+   END-OF-TURN STATUS DAMAGE
+═══════════════════════════════════ */
+function processEndTurnStatus(poke) {
+  let html = '';
+  if (poke.status === 'psn' || poke.status === 'brn') {
+    const dmg = Math.round(poke.stats.maxHp * (poke.status === 'psn' ? 0.125 : 0.0625));
+    poke.hp -= dmg;
+    const who = poke === playerPoke ? 'player' : 'enemy';
+    showFloat('-' + dmg, '#c084fc', who);
+    html += `<br><span class="log-status">${poke.card.name} is hurt by ${poke.status === 'psn' ? 'poison' : 'burn'}! (-${dmg})</span>`;
+  }
+  if (poke.leech) {
+    const other = poke === playerPoke ? enemyPoke : playerPoke;
+    const drain = Math.round(poke.stats.maxHp * 0.1);
+    poke.hp  -= drain;
+    other.hp  = Math.min(other.stats.maxHp, other.hp + drain);
+    showFloat('-' + drain, '#c084fc', poke === playerPoke ? 'player' : 'enemy');
+    html += `<br><span class="log-status">Leech Seed drained ${poke.card.name}! (-${drain})</span>`;
+  }
+  if (poke.aquaring) {
+    const heal = Math.round(poke.stats.maxHp * 0.0625);
+    poke.hp = Math.min(poke.stats.maxHp, poke.hp + heal);
+    html += `<br><span class="log-heal">Aqua Ring healed ${poke.card.name}! (+${heal})</span>`;
+  }
+  return html;
+}
+
+/* ═══════════════════════════════════
+   PLAYER USES SKILL
+═══════════════════════════════════ */
+function useSkill(idx) {
+  if (!battling || !playerTurn) return;
+  const skill = playerPoke.skills[idx];
+  if (!skill || skill.curPp <= 0) return;
+
+  skill.curPp--;
+  disableSkills(true);
+  playerTurn = false;
+  setTurnBadge(false);
+
+  // Paralysis check
+  if (playerPoke.status === 'par' && Math.random() < 0.25) {
+    setLog(`<span class="log-status">${playerPoke.card.name} is paralyzed! It can't move!</span>`);
+    updateHUD();
+    setTimeout(enemyTurn, 1000);
+    return;
+  }
+  // Sleep check
+  if (playerPoke.status === 'slp') {
+    if (playerPoke.statusTurns > 0) {
+      playerPoke.statusTurns--;
+      setLog(`<span class="log-status">${playerPoke.card.name} is fast asleep!</span>`);
+      updateHUD();
+      setTimeout(enemyTurn, 1000);
+      return;
+    } else {
+      playerPoke.status = null;
+      appendLog(`<span class="log-heal">${playerPoke.card.name} woke up!</span>`);
+    }
+  }
+
+  // Deal damage
+  let logHtml = '';
+  let isCrit = false;
+  if (skill.power > 0) {
+    isCrit = skill.effect === 'crit' ? Math.random() < 0.25 : Math.random() < 0.0625;
+    const { dmg, mult } = calcDamage(playerPoke, skill, enemyPoke);
+    const finalDmg = isCrit ? Math.round(dmg * 1.5) : dmg;
+    enemyPoke.hp -= finalDmg;
+    showFloat('-' + finalDmg, '#f87171', 'enemy');
+    hitAnim('enemy');
+    logHtml = `${playerPoke.card.name} used <b>${skill.name}</b>! `;
+    if (isCrit) logHtml += `<span class="log-crit">Critical hit! </span>`;
+    if (mult >= 2) logHtml += `<span class="log-eff">Super effective! </span>`;
+    if (mult <= 0.5 && mult > 0) logHtml += `<span class="log-miss">Not very effective… </span>`;
+    if (mult === 0) logHtml += `<span class="log-miss">It had no effect! </span>`;
+    logHtml += `<span class="log-dmg">-${finalDmg} HP</span>`;
+  } else {
+    logHtml = `${playerPoke.card.name} used <b>${skill.name}</b>!`;
+  }
+
+  // Apply effect
+  logHtml += applyEffect(skill, playerPoke, enemyPoke, 'enemy');
+  setLog(logHtml);
+
+  // End-of-turn status
+  let etHtml = processEndTurnStatus(playerPoke);
+  if (enemyPoke.hp > 0) etHtml += processEndTurnStatus(enemyPoke);
+  if (etHtml) appendLog(etHtml);
+
+  updateHUD();
+
+  if (enemyPoke.hp <= 0) {
+    setTimeout(() => endBattle(true), 900);
+    return;
+  }
+  if (playerPoke.hp <= 0) {
+    setTimeout(() => endBattle(false), 900);
+    return;
+  }
+
+  setTimeout(enemyTurn, 1100);
+}
+
+/* ═══════════════════════════════════
+   ENEMY TURN (AI)
+═══════════════════════════════════ */
+function enemyTurn() {
+  if (!battling) return;
+  setTurnBadge(false);
+
+  // Paralysis
+  if (enemyPoke.status === 'par' && Math.random() < 0.25) {
+    appendLog(`<span class="log-status">${enemyPoke.card.name} is paralyzed and can't move!</span>`);
+    endEnemyTurn();
+    return;
+  }
+  // Sleep
+  if (enemyPoke.status === 'slp') {
+    if (enemyPoke.statusTurns > 0) {
+      enemyPoke.statusTurns--;
+      appendLog(`<span class="log-status">${enemyPoke.card.name} is fast asleep!</span>`);
+      endEnemyTurn();
+      return;
+    } else {
+      enemyPoke.status = null;
+      appendLog(`<span class="log-heal">${enemyPoke.card.name} woke up!</span>`);
+    }
+  }
+
+  // Pick skill: prefer power, but sometimes use status/buff
+  const available = enemyPoke.skills.filter(s => s.curPp > 0);
+  if (!available.length) {
+    appendLog(`<span class="log-miss">${enemyPoke.card.name} has no moves left! It struggled!</span>`);
+    const dmg = Math.round(enemyPoke.stats.maxHp * 0.05);
+    enemyPoke.hp -= dmg;
+    updateHUD();
+    endEnemyTurn();
+    return;
+  }
+
+  let sk;
+  const rand = Math.random();
+  if (rand < 0.75) {
+    // pick highest-power available skill
+    sk = available.filter(s => s.power > 0).sort((a,b) => b.power - a.power)[0] || available[0];
+  } else {
+    sk = available[Math.floor(Math.random() * available.length)];
+  }
+
+  sk.curPp--;
+  let logHtml = '';
+
+  if (sk.power > 0) {
+    const isCrit = Math.random() < 0.0625;
+    const { dmg, mult } = calcDamage(enemyPoke, sk, playerPoke);
+    const finalDmg = isCrit ? Math.round(dmg * 1.5) : dmg;
+    playerPoke.hp -= finalDmg;
+    showFloat('-' + finalDmg, '#f87171', 'player');
+    hitAnim('player');
+    logHtml = `${enemyPoke.card.name} used <b>${sk.name}</b>! `;
+    if (isCrit) logHtml += `<span class="log-crit">Critical hit! </span>`;
+    if (mult >= 2) logHtml += `<span class="log-eff">Super effective! </span>`;
+    if (mult <= 0.5 && mult > 0) logHtml += `<span class="log-miss">Not very effective… </span>`;
+    logHtml += `<span class="log-dmg">-${finalDmg} HP</span>`;
+  } else {
+    logHtml = `${enemyPoke.card.name} used <b>${sk.name}</b>!`;
+  }
+
+  logHtml += applyEffect(sk, enemyPoke, playerPoke, 'player');
+  appendLog(logHtml);
+
+  // End-of-turn status
+  let etHtml = '';
+  if (playerPoke.hp > 0) etHtml += processEndTurnStatus(playerPoke);
+  etHtml += processEndTurnStatus(enemyPoke);
+  if (etHtml) appendLog(etHtml);
+
+  updateHUD();
+
+  if (playerPoke.hp <= 0) { setTimeout(() => endBattle(false), 900); return; }
+  if (enemyPoke.hp  <= 0) { setTimeout(() => endBattle(true),  900); return; }
+
+  endEnemyTurn();
+}
+
+function endEnemyTurn() {
+  playerTurn = true;
+  setTurnBadge(true);
+  updateHUD();
+  disableSkills(false);
+}
+
+/* ═══════════════════════════════════
+   HIT ANIMATION
+═══════════════════════════════════ */
+function hitAnim(who) {
+  const sprite = document.getElementById(who + '-sprite');
+  const wrap   = document.getElementById(who + '-sprite-wrap');
+  sprite.classList.add('hit-anim');
+  wrap.classList.add('shake');
+  setTimeout(() => { sprite.classList.remove('hit-anim'); wrap.classList.remove('shake'); }, 550);
+}
+
+function disableSkills(disable) {
+  playerPoke.skills.forEach((_, i) => {
+    const btn = document.getElementById('skill-' + i);
+    if (btn) btn.disabled = disable || playerPoke.skills[i].curPp <= 0;
+  });
+}
+
+/* ═══════════════════════════════════
+   FLEE
+═══════════════════════════════════ */
+function flee() {
+  if (!battling) return;
+  battling = false;
+  losses++;
+  document.getElementById('result-icon').textContent  = '🏃';
+  document.getElementById('result-title').textContent = 'Ran Away!';
+  document.getElementById('result-title').style.color = '#94a3b8';
+  document.getElementById('result-sub').textContent   = `You escaped from ${enemyPoke.card.name}. No XP earned.`;
+  document.getElementById('result-xp').textContent    = `Wins: ${wins}  |  Losses: ${losses}`;
+  document.getElementById('result-card').style.borderColor = '#475569';
+  document.getElementById('result-overlay').classList.add('show');
+}
+
+/* ═══════════════════════════════════
+   END BATTLE
+═══════════════════════════════════ */
+function endBattle(playerWon) {
+  battling = false;
+  disableSkills(true);
+
+  if (playerWon) {
+    wins++;
+    const xp = Math.round((enemyPoke.stats.level * 40) * (RARITY_TIER[enemyPoke.card.rarity] || 1));
+    document.getElementById('result-icon').textContent  = '🏆';
+    document.getElementById('result-title').textContent = 'Victory!';
+    document.getElementById('result-title').style.color = '#FFD700';
+    document.getElementById('result-sub').innerHTML     = `You defeated <b>${enemyPoke.card.name}</b>!`;
+    document.getElementById('result-xp').textContent    = `+${xp} XP earned! | Wins: ${wins}`;
+    document.getElementById('result-card').style.borderColor = '#FFD700';
+  } else {
+    losses++;
+    document.getElementById('result-icon').textContent  = '💀';
+    document.getElementById('result-title').textContent = 'Defeated!';
+    document.getElementById('result-title').style.color = '#f87171';
+    document.getElementById('result-sub').innerHTML     = `<b>${playerPoke.card.name}</b> fainted…`;
+    document.getElementById('result-xp').textContent    = `Wins: ${wins}  |  Losses: ${losses}`;
+    document.getElementById('result-card').style.borderColor = '#f87171';
+  }
+  document.getElementById('result-overlay').classList.add('show');
+}
+
+/* ═══════════════════════════════════
+   RESULT BUTTONS
+═══════════════════════════════════ */
+function rematch() {
+  document.getElementById('result-overlay').classList.remove('show');
+  startBattle();
+}
+function backToPicker() {
+  document.getElementById('result-overlay').classList.remove('show');
+  document.getElementById('battle-screen').style.display  = 'none';
+  document.getElementById('picker-screen').style.display  = 'block';
+  selectedCardId = null;
+  document.getElementById('start-btn').disabled = true;
+  document.querySelectorAll('.pick-card').forEach(el => el.classList.remove('selected'));
+}
+
+/* ═══════════════════════════════════
+   INIT
+═══════════════════════════════════ */
+loadOwned();
+buildPicker();
+</script>
+</body>
+</html>
