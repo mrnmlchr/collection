@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Pokémon AR Finder</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #000;
+      font-family: 'Nunito', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100dvh;
+      position: relative;
+    }
+
+    /* ── Camera ── */
+    #camera-video {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover; z-index: 0;
+    }
+
+    /* ── No-camera fallback ── */
+    #no-camera {
+      position: fixed; inset: 0; z-index: 0; display: none;
+      background: radial-gradient(ellipse at 50% 60%, #1a3a1a 0%, #0a1a0a 50%, #000 100%);
+    }
+    #no-camera::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        radial-gradient(circle at 20% 85%, rgba(0,120,0,0.35) 0%, transparent 28%),
+        radial-gradient(circle at 75% 90%, rgba(0,100,0,0.4) 0%, transparent 22%),
+        radial-gradient(circle at 50% 80%, rgba(0,80,0,0.2) 0%, transparent 32%),
+        radial-gradient(circle at 10% 70%, rgba(20,80,20,0.3) 0%, transparent 20%),
+        radial-gradient(circle at 90% 75%, rgba(10,70,10,0.3) 0%, transparent 20%);
+    }
+
+    /* ── Flash ── */
+    #flash {
+      position: fixed; inset: 0; background: #fff; z-index: 45;
+      pointer-events: none; opacity: 0; transition: opacity 0.08s;
+    }
+
+    /* ── Top HUD ── */
+    #top-hud {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+      padding: 16px 20px 14px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, transparent 100%);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .back-btn {
+      background: rgba(0,0,0,0.55);
+      border: 2px solid rgba(255,255,255,0.28);
+      color: #fff;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px;
+      padding: 9px 14px;
+      border-radius: 20px;
+      cursor: pointer; text-decoration: none;
+    }
+    .hud-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px; color: #fff;
+      text-shadow: 0 0 12px rgba(255,255,255,0.5);
+    }
+    .caught-counter {
+      background: rgba(0,0,0,0.55);
+      border: 2px solid #FFD700;
+      border-radius: 20px; padding: 6px 14px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px; color: #FFD700;
+    }
+
+    /* ── Pokémon on screen ── */
+    #pokemon-container {
+      position: fixed; z-index: 15;
+      cursor: pointer;
+      transform-origin: center bottom;
+      display: none;
+    }
+    #pokemon-sprite {
+      width: 160px; height: 160px;
+      object-fit: contain;
+      filter: drop-shadow(0 10px 28px rgba(0,0,0,0.85));
+      animation: poke-float 2.2s ease-in-out infinite;
+      display: block;
+    }
+    #pokemon-shadow {
+      width: 76px; height: 14px;
+      background: radial-gradient(ellipse, rgba(0,0,0,0.55) 0%, transparent 70%);
+      margin: 0 auto; border-radius: 50%;
+      animation: shadow-pulse 2.2s ease-in-out infinite;
+    }
+    @keyframes poke-float {
+      0%,100% { transform: translateY(0px) rotate(-2deg); }
+      50%      { transform: translateY(-20px) rotate(2deg); }
+    }
+    @keyframes shadow-pulse {
+      0%,100% { transform: scaleX(1); opacity: 0.5; }
+      50%      { transform: scaleX(0.65); opacity: 0.25; }
+    }
+
+    /* Spawn-in animation */
+    @keyframes spawn-in {
+      from { opacity: 0; transform: scale(0.3) translateY(30px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .spawning { animation: spawn-in 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+    /* Radar rings under Pokémon */
+    .radar-ring {
+      position: absolute;
+      bottom: -4px; left: 50%;
+      border-radius: 50%;
+      border: 2px solid rgba(255,240,80,0.45);
+      transform: translateX(-50%);
+      animation: radar 2s ease-out infinite;
+      pointer-events: none;
+    }
+    .radar-ring:nth-child(2) { animation-delay: 0.5s; }
+    .radar-ring:nth-child(3) { animation-delay: 1s; }
+    @keyframes radar {
+      0%   { width:20px; height:10px; opacity:0.7; }
+      100% { width:120px; height:40px; opacity:0; }
+    }
+
+    /* ── Bottom UI ── */
+    #bottom-ui {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+      padding: 18px 24px 38px;
+      background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, transparent 100%);
+    }
+
+    #encounter-banner {
+      text-align: center; margin-bottom: 18px;
+    }
+    #enc-name {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 13px; color: #fff;
+      text-shadow: 0 0 16px rgba(255,215,0,0.55);
+      display: block; margin-bottom: 7px;
+    }
+    #enc-type {
+      display: inline-block; font-size: 12px; font-weight: 800;
+      padding: 3px 14px; border-radius: 999px; margin-right: 6px;
+    }
+    #enc-rarity { font-size: 11px; color: rgba(255,255,255,0.45); }
+
+    /* Action row */
+    #action-row {
+      display: flex;
+      align-items: center; justify-content: center; gap: 20px;
+    }
+    .side-btn {
+      flex: 1; max-width: 100px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px; color: #fff;
+      padding: 13px 0; border-radius: 14px;
+      cursor: pointer; border: 3px solid; transition: all 0.15s;
+      text-align: center;
+    }
+    .run-btn  { background: rgba(180,30,30,0.75); border-color: #ff6b6b; }
+    .run-btn:hover { background: rgba(200,40,40,0.95); }
+    .next-btn { background: rgba(30,70,190,0.75); border-color: #6b9fff; }
+    .next-btn:hover { background: rgba(30,90,210,0.95); }
+
+    /* Poké Ball catch button */
+    #catch-wrap { position: relative; flex-shrink: 0; }
+    #catch-btn {
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 38% 32%, #fff 0%, #ddd 100%);
+      border: 4px solid #111;
+      cursor: pointer; position: relative; overflow: hidden;
+      transition: transform 0.1s;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.7), 0 0 28px rgba(255,215,0,0.2);
+    }
+    #catch-btn:active { transform: scale(0.90); }
+    #catch-btn::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 50%;
+      background: #e53e3e; border-bottom: 4px solid #111;
+    }
+    #catch-btn::after {
+      content: '';
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #fff; border: 4px solid #111; z-index: 2;
+    }
+    #catch-lbl {
+      position: absolute; bottom: -26px; left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px; color: rgba(255,255,255,0.6); white-space: nowrap;
+    }
+
+    /* ── Throw ball ── */
+    #throw-ball {
+      position: fixed; z-index: 30; pointer-events: none; display: none;
+    }
+    .tball {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: radial-gradient(circle at 38% 32%, #fff 0%, #ddd 100%);
+      border: 3px solid #111; position: relative; overflow: hidden;
+    }
+    .tball::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 50%;
+      background: #e53e3e; border-bottom: 3px solid #111;
+    }
+    .tball::after {
+      content: '';
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #fff; border: 2px solid #111; z-index: 2;
+    }
+
+    /* ── Catch overlay ── */
+    #catch-overlay {
+      position: fixed; inset: 0; z-index: 50; display: none;
+      align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.72); backdrop-filter: blur(5px);
+    }
+    #catch-overlay.show { display: flex; }
+    .catch-card {
+      background: linear-gradient(135deg, #1a1a35, #252545);
+      border: 3px solid #FFD700; border-radius: 26px;
+      padding: 32px 28px; text-align: center;
+      max-width: 320px; width: 90%;
+      animation: card-pop 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
+      box-shadow: 0 0 60px rgba(255,215,0,0.35);
+    }
+    @keyframes card-pop {
+      from { transform: scale(0.2) rotate(-12deg); opacity: 0; }
+      to   { transform: scale(1) rotate(0deg);     opacity: 1; }
+    }
+    .catch-stars { font-size: 26px; margin-bottom: 8px; }
+    .catch-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 12px; color: #FFD700; margin-bottom: 2px;
+    }
+    .catch-sub {
+      font-size: 12px; color: rgba(255,255,255,0.45); margin-bottom: 16px;
+    }
+    #caught-sprite {
+      width: 118px; height: 118px; object-fit: contain;
+      margin: 0 auto 12px; display: block;
+      filter: drop-shadow(0 0 22px rgba(255,215,0,0.55));
+      animation: poke-float 2s ease-in-out infinite;
+    }
+    #caught-name {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 12px; color: #fff; margin-bottom: 6px;
+    }
+    #caught-rarity { font-size: 13px; color: #FFD700; font-weight: 900; margin-bottom: 16px; }
+    .catch-continue {
+      background: linear-gradient(135deg, #7c3aed, #2563eb);
+      color: #fff; font-family: 'Press Start 2P', monospace;
+      font-size: 9px; padding: 14px 32px;
+      border-radius: 12px; cursor: pointer; border: none;
+      box-shadow: 0 4px 16px rgba(124,58,237,0.45);
+    }
+
+    /* ── Flee overlay ── */
+    #flee-overlay {
+      position: fixed; inset: 0; z-index: 50;
+      display: none; align-items: center;
+      justify-content: center; pointer-events: none;
+    }
+    #flee-overlay.show { display: flex; }
+    .flee-text {
+      font-family: 'Press Start 2P', monospace; font-size: 15px; color: #fff;
+      text-shadow: 0 0 20px rgba(255,100,100,0.8);
+      animation: flee-anim 0.9s ease both;
+    }
+    @keyframes flee-anim {
+      0%   { opacity:0; transform:scale(0.5); }
+      30%  { opacity:1; transform:scale(1.1); }
+      70%  { opacity:1; transform:scale(1);   }
+      100% { opacity:0; transform:translateY(-50px); }
+    }
+
+    /* ── Pokéball shake ── */
+    @keyframes ball-shake {
+      0%,100% { transform:rotate(0deg); }
+      20% { transform:rotate(-14deg); }
+      40% { transform:rotate(14deg); }
+      60% { transform:rotate(-9deg); }
+      80% { transform:rotate(9deg); }
+    }
+    .ball-shaking { animation: ball-shake 0.5s ease-in-out 3; }
+
+    /* ── Permission screen ── */
+    #perm-screen {
+      position: fixed; inset: 0; z-index: 100;
+      background: radial-gradient(ellipse at 60% 40%, #1a1a4e 0%, #0d0d2b 60%, #000010 100%);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 18px; padding: 40px; text-align: center;
+    }
+    .perm-icon { font-size: 64px; }
+    .perm-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 12px; color: #FFD700; line-height: 1.9;
+    }
+    .perm-sub { font-size: 14px; color: rgba(255,255,255,0.45); max-width: 300px; }
+    .perm-btn {
+      background: linear-gradient(135deg, #7c3aed, #2563eb);
+      color: #fff; font-family: 'Press Start 2P', monospace;
+      font-size: 10px; padding: 16px 32px; border-radius: 14px;
+      cursor: pointer; border: none;
+      box-shadow: 0 4px 20px rgba(124,58,237,0.5); margin-top: 8px;
+    }
+    .perm-skip {
+      color: rgba(255,255,255,0.3); font-size: 11px; margin-top: 4px;
+      cursor: pointer; background: none; border: none;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    /* ── Type badge colors ── */
+    .tc-fire      { background:rgba(192,57,43,0.45);  color:#ff8a80; border:1px solid rgba(192,57,43,0.6); }
+    .tc-water     { background:rgba(26,95,122,0.45);  color:#80d8ff; border:1px solid rgba(26,95,122,0.6); }
+    .tc-grass     { background:rgba(30,100,53,0.45);  color:#b9f6ca; border:1px solid rgba(30,100,53,0.6); }
+    .tc-electric  { background:rgba(212,172,13,0.45); color:#ffff8d; border:1px solid rgba(212,172,13,0.6); }
+    .tc-psychic   { background:rgba(125,60,152,0.45); color:#ea80fc; border:1px solid rgba(125,60,152,0.6); }
+    .tc-dark      { background:rgba(28,28,28,0.65);   color:#b0bec5; border:1px solid rgba(100,100,150,0.5); }
+    .tc-dragon    { background:rgba(26,35,126,0.45);  color:#82b1ff; border:1px solid rgba(26,35,126,0.6); }
+    .tc-fighting  { background:rgba(123,52,30,0.45);  color:#ffab91; border:1px solid rgba(123,52,30,0.6); }
+    .tc-steel     { background:rgba(93,109,126,0.45); color:#cfd8dc; border:1px solid rgba(93,109,126,0.6); }
+    .tc-colorless { background:rgba(44,44,59,0.45);   color:#eceff1; border:1px solid rgba(100,100,120,0.5); }
+  </style>
+</head>
+<body>
+
+  <!-- Camera / fallback -->
+  <video id="camera-video" autoplay playsinline muted></video>
+  <div id="no-camera"></div>
+
+  <!-- Flash -->
+  <div id="flash"></div>
+
+  <!-- Top HUD -->
+  <div id="top-hud">
+    <a href="index.html" class="back-btn">← Back</a>
+    <span class="hud-title">📷 AR Finder</span>
+    <div class="caught-counter">🏆 <span id="session-count">0</span> caught</div>
+  </div>
+
+  <!-- Pokémon on screen -->
+  <div id="pokemon-container">
+    <div class="radar-ring"></div>
+    <div class="radar-ring"></div>
+    <div class="radar-ring"></div>
+    <img id="pokemon-sprite" src="" alt="" />
+    <div id="pokemon-shadow"></div>
+  </div>
+
+  <!-- Bottom UI -->
+  <div id="bottom-ui">
+    <div id="encounter-banner">
+      <span id="enc-name">—</span>
+      <span id="enc-type" class="tc-colorless">Colorless</span>
+      <span id="enc-rarity">Common</span>
+    </div>
+    <div id="action-row">
+      <button class="side-btn run-btn"  onclick="runAway()">🏃 Run</button>
+      <div id="catch-wrap">
+        <div id="catch-btn" onclick="throwBall()"></div>
+        <span id="catch-lbl">CATCH!</span>
+      </div>
+      <button class="side-btn next-btn" onclick="spawnNext()">Next 🔀</button>
+    </div>
+  </div>
+
+  <!-- Throw ball -->
+  <div id="throw-ball"><div class="tball"></div></div>
+
+  <!-- Catch card overlay -->
+  <div id="catch-overlay">
+    <div class="catch-card">
+      <div class="catch-stars">✨🌟✨</div>
+      <div class="catch-title">CAUGHT!</div>
+      <div class="catch-sub" id="catch-sub">Added to your collection</div>
+      <img id="caught-sprite" src="" alt="" />
+      <div id="caught-name">—</div>
+      <div id="caught-rarity">—</div>
+      <button class="catch-continue" onclick="closeCatch()">Continue →</button>
+    </div>
+  </div>
+
+  <!-- Flee overlay -->
+  <div id="flee-overlay"><div class="flee-text">💨 Got away!</div></div>
+
+  <!-- Permission screen -->
+  <div id="perm-screen">
+    <div class="perm-icon">🎮</div>
+    <div class="perm-title">Pokémon<br>AR Finder</div>
+    <div class="perm-sub">Use your camera to find Pokémon in the real world and catch them to add to your collection!</div>
+    <button class="perm-btn" onclick="startCamera()">🎥 Start Camera</button>
+    <button class="perm-skip" onclick="startNoCam()">Play without camera</button>
+  </div>
+
+<script>
+/* ══════════════════════════════════════════════
+   POKÉMON POOL  (name, type, rarity, Pokédex ID)
+══════════════════════════════════════════════ */
+const POOL = [
+  // Grass
+  { name:'Bulbasaur',       type:'Grass',     rarity:'Common',      dex:1   },
+  { name:'Ivysaur',         type:'Grass',     rarity:'Uncommon',    dex:2   },
+  { name:'Mega Venusaur',   type:'Grass',     rarity:'Double Rare', dex:3   },
+  { name:'Exeggcute',       type:'Grass',     rarity:'Common',      dex:102 },
+  { name:'Exeggutor',       type:'Grass',     rarity:'Rare',        dex:103 },
+  { name:'Tangela',         type:'Grass',     rarity:'Common',      dex:114 },
+  { name:'Tangrowth',       type:'Grass',     rarity:'Rare',        dex:465 },
+  { name:'Chikorita',       type:'Grass',     rarity:'Common',      dex:152 },
+  { name:'Meganium',        type:'Grass',     rarity:'Rare',        dex:154 },
+  { name:'Shuckle',         type:'Grass',     rarity:'Common',      dex:213 },
+  { name:'Celebi',          type:'Psychic',   rarity:'Rare',        dex:251 },
+  { name:'Seedot',          type:'Grass',     rarity:'Common',      dex:273 },
+  { name:'Ninjask',         type:'Grass',     rarity:'Uncommon',    dex:291 },
+  { name:'Dhelmise',        type:'Grass',     rarity:'Rare',        dex:781 },
+  // Fire
+  { name:'Vulpix',          type:'Fire',      rarity:'Common',      dex:37  },
+  { name:'Ninetales',       type:'Fire',      rarity:'Rare',        dex:38  },
+  { name:'Numel',           type:'Fire',      rarity:'Common',      dex:322 },
+  { name:'Mega Camerupt',   type:'Fire',      rarity:'Double Rare', dex:323 },
+  { name:'Litleo',          type:'Fire',      rarity:'Common',      dex:667 },
+  { name:'Pyroar',          type:'Fire',      rarity:'Rare',        dex:668 },
+  { name:'Volcanion',       type:'Fire',      rarity:'Rare',        dex:721 },
+  { name:'Scorbunny',       type:'Fire',      rarity:'Common',      dex:813 },
+  { name:'Cinderace',       type:'Fire',      rarity:'Rare',        dex:815 },
+  { name:'Chi-Yu',          type:'Fire',      rarity:'Rare',        dex:1007},
+  // Water
+  { name:'Mantine',         type:'Water',     rarity:'Common',      dex:226 },
+  { name:'Kyogre',          type:'Water',     rarity:'Rare',        dex:382 },
+  { name:'Snover',          type:'Water',     rarity:'Common',      dex:459 },
+  { name:'Mega Abomasnow',  type:'Water',     rarity:'Double Rare', dex:460 },
+  { name:'Clawitzer',       type:'Water',     rarity:'Rare',        dex:694 },
+  { name:'Sobble',          type:'Water',     rarity:'Common',      dex:816 },
+  { name:'Inteleon',        type:'Water',     rarity:'Rare',        dex:818 },
+  { name:'Frosmoth',        type:'Water',     rarity:'Rare',        dex:873 },
+  { name:'Eiscue',          type:'Water',     rarity:'Common',      dex:875 },
+  // Electric
+  { name:'Magnemite',       type:'Electric',  rarity:'Common',      dex:81  },
+  { name:'Magnezone',       type:'Electric',  rarity:'Rare',        dex:462 },
+  { name:'Raikou',          type:'Electric',  rarity:'Rare',        dex:243 },
+  { name:'Electrike',       type:'Electric',  rarity:'Common',      dex:309 },
+  { name:'Mega Manectric',  type:'Electric',  rarity:'Double Rare', dex:310 },
+  { name:'Pachirisu',       type:'Electric',  rarity:'Common',      dex:417 },
+  { name:'Heliolisk',       type:'Electric',  rarity:'Rare',        dex:695 },
+  // Psychic
+  { name:'Abra',            type:'Psychic',   rarity:'Common',      dex:63  },
+  { name:'Alakazam',        type:'Psychic',   rarity:'Rare',        dex:65  },
+  { name:'Jynx',            type:'Psychic',   rarity:'Rare',        dex:124 },
+  { name:'Ralts',           type:'Psychic',   rarity:'Common',      dex:280 },
+  { name:'Kirlia',          type:'Psychic',   rarity:'Uncommon',    dex:281 },
+  { name:'Mega Gardevoir',  type:'Psychic',   rarity:'Double Rare', dex:282 },
+  { name:'Shedinja',        type:'Psychic',   rarity:'Rare',        dex:292 },
+  { name:'Xerneas',         type:'Psychic',   rarity:'Rare',        dex:716 },
+  { name:'Greavard',        type:'Psychic',   rarity:'Common',      dex:926 },
+  { name:'Houndstone',      type:'Psychic',   rarity:'Rare',        dex:927 },
+  // Fighting
+  { name:'Sandshrew',       type:'Fighting',  rarity:'Common',      dex:27  },
+  { name:'Onix',            type:'Fighting',  rarity:'Common',      dex:95  },
+  { name:'Riolu',           type:'Fighting',  rarity:'Common',      dex:447 },
+  { name:'Mega Lucario',    type:'Fighting',  rarity:'Double Rare', dex:448 },
+  { name:'Marshadow',       type:'Fighting',  rarity:'Rare',        dex:802 },
+  { name:'Garganacl',       type:'Fighting',  rarity:'Rare',        dex:935 },
+  // Dark
+  { name:'Crawdaunt',       type:'Dark',      rarity:'Rare',        dex:342 },
+  { name:'Mega Absol',      type:'Dark',      rarity:'Double Rare', dex:359 },
+  { name:'Spiritomb',       type:'Psychic',   rarity:'Rare',        dex:442 },
+  { name:'Yveltal',         type:'Dark',      rarity:'Rare',        dex:717 },
+  { name:'Nickit',          type:'Dark',      rarity:'Common',      dex:827 },
+  { name:'Grafaiai',        type:'Dark',      rarity:'Rare',        dex:945 },
+  // Steel
+  { name:'Steelix',         type:'Steel',     rarity:'Rare',        dex:208 },
+  { name:'Mega Mawile',     type:'Steel',     rarity:'Double Rare', dex:303 },
+  { name:'Dialga',          type:'Steel',     rarity:'Rare',        dex:483 },
+  { name:'Tinkaton',        type:'Steel',     rarity:'Rare',        dex:959 },
+  { name:'Gholdengo',       type:'Steel',     rarity:'Rare',        dex:1000},
+  // Dragon / Colorless
+  { name:'Mega Latias',     type:'Dragon',    rarity:'Double Rare', dex:380 },
+  { name:'Latios',          type:'Dragon',    rarity:'Rare',        dex:381 },
+  { name:'Spearow',         type:'Colorless', rarity:'Common',      dex:21  },
+  { name:'Fearow',          type:'Colorless', rarity:'Rare',        dex:22  },
+  { name:'Mega Kangaskhan', type:'Colorless', rarity:'Double Rare', dex:115 },
+  { name:'Delibird',        type:'Water',     rarity:'Common',      dex:225 },
+  { name:'Miltank',         type:'Colorless', rarity:'Common',      dex:241 },
+  { name:'Buneary',         type:'Colorless', rarity:'Common',      dex:427 },
+  { name:'Lopunny',         type:'Colorless', rarity:'Rare',        dex:428 },
+  { name:'Stufful',         type:'Colorless', rarity:'Common',      dex:759 },
+  { name:'Bewear',          type:'Colorless', rarity:'Rare',        dex:760 },
+];
+
+// Rarity → spawn weight (lower rarity = spawns more often)
+const WEIGHTS = { 'Common':55, 'Uncommon':26, 'Rare':14, 'Double Rare':5 };
+
+// Name → mega-evolution card ID
+const CARD_MAP = {
+  'Bulbasaur':'meg1-1','Ivysaur':'meg1-2','Mega Venusaur':'meg1-3',
+  'Exeggcute':'meg1-4','Exeggutor':'meg1-5','Tangela':'meg1-6','Tangrowth':'meg1-7',
+  'Chikorita':'meg1-8','Meganium':'meg1-10','Shuckle':'meg1-11',
+  'Celebi':'meg1-12','Seedot':'meg1-13','Ninjask':'meg1-17','Dhelmise':'meg1-18',
+  'Vulpix':'meg1-19','Ninetales':'meg1-20','Numel':'meg1-21','Mega Camerupt':'meg1-22',
+  'Litleo':'meg1-23','Pyroar':'meg1-24','Volcanion':'meg1-25','Scorbunny':'meg1-26',
+  'Cinderace':'meg1-28','Chi-Yu':'meg1-31',
+  'Mantine':'meg1-32','Kyogre':'meg1-34','Snover':'meg1-35','Mega Abomasnow':'meg1-36',
+  'Clawitzer':'meg1-38','Sobble':'meg1-39','Inteleon':'meg1-41',
+  'Frosmoth':'meg1-43','Eiscue':'meg1-44',
+  'Magnemite':'meg1-45','Magnezone':'meg1-47','Raikou':'meg1-48',
+  'Electrike':'meg1-49','Mega Manectric':'meg1-50','Pachirisu':'meg1-51','Heliolisk':'meg1-53',
+  'Abra':'meg1-54','Alakazam':'meg1-56','Jynx':'meg1-57',
+  'Ralts':'meg1-58','Kirlia':'meg1-59','Mega Gardevoir':'meg1-60','Shedinja':'meg1-61',
+  'Xerneas':'meg1-64','Greavard':'meg1-65','Houndstone':'meg1-66',
+  'Sandshrew':'meg1-68','Onix':'meg1-70','Riolu':'meg1-76','Mega Lucario':'meg1-77',
+  'Marshadow':'meg1-80','Garganacl':'meg1-84',
+  'Crawdaunt':'meg1-85','Mega Absol':'meg1-86','Spiritomb':'meg1-87',
+  'Yveltal':'meg1-88','Nickit':'meg1-89','Grafaiai':'meg1-92',
+  'Steelix':'meg1-93','Mega Mawile':'meg1-94','Dialga':'meg1-95',
+  'Tinkaton':'meg1-98','Gholdengo':'meg1-99',
+  'Mega Latias':'meg1-100','Latios':'meg1-101',
+  'Spearow':'meg1-102','Fearow':'meg1-103','Mega Kangaskhan':'meg1-104',
+  'Delibird':'meg1-105','Miltank':'meg1-106','Buneary':'meg1-107',
+  'Lopunny':'meg1-108','Stufful':'meg1-111','Bewear':'meg1-112',
+};
+
+function spriteUrl(dex) {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${dex}.png`;
+}
+
+function weightedPick() {
+  const bag = [];
+  POOL.forEach(p => {
+    const w = WEIGHTS[p.rarity] || 10;
+    for (let i = 0; i < w; i++) bag.push(p);
+  });
+  return bag[Math.floor(Math.random() * bag.length)];
+}
+
+/* ═══════════ STATE ═══════════ */
+let current   = null;
+let catching  = false;
+let sessionN  = 0;
+let owned     = {};
+
+function loadOwned() {
+  try { owned = JSON.parse(localStorage.getItem('poke_owned') || '{}'); } catch(e) { owned = {}; }
+}
+function saveOwned() { localStorage.setItem('poke_owned', JSON.stringify(owned)); }
+
+/* ═══════════ CAMERA ═══════════ */
+async function startCamera() {
+  document.getElementById('perm-screen').style.display = 'none';
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    const v = document.getElementById('camera-video');
+    v.srcObject = stream;
+    await v.play();
+  } catch(e) {
+    document.getElementById('camera-video').style.display = 'none';
+    document.getElementById('no-camera').style.display = 'block';
+  }
+  spawnNext();
+}
+
+function startNoCam() {
+  document.getElementById('perm-screen').style.display = 'none';
+  document.getElementById('camera-video').style.display = 'none';
+  document.getElementById('no-camera').style.display = 'block';
+  spawnNext();
+}
+
+/* ═══════════ SPAWN ═══════════ */
+function spawnNext() {
+  catching = false;
+  current = weightedPick();
+
+  const sprite = document.getElementById('pokemon-sprite');
+  sprite.src = spriteUrl(current.dex);
+  sprite.style.animation = 'poke-float 2.2s ease-in-out infinite';
+
+  const cont = document.getElementById('pokemon-container');
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  const x = 40 + Math.random() * (W - 220);
+  const y = 130 + Math.random() * (H - 420);
+  cont.style.left = x + 'px';
+  cont.style.top  = y + 'px';
+  cont.style.display = 'block';
+  cont.className = 'spawning';
+  setTimeout(() => { cont.className = ''; }, 600);
+
+  // Update HUD
+  document.getElementById('enc-name').textContent = current.name;
+  const typeEl = document.getElementById('enc-type');
+  typeEl.textContent = current.type;
+  typeEl.className   = 'tc-' + current.type.toLowerCase();
+  document.getElementById('enc-rarity').textContent = current.rarity;
+}
+
+/* ═══════════ THROW ═══════════ */
+function throwBall() {
+  if (catching || !current) return;
+  catching = true;
+
+  // Flash
+  const flash = document.getElementById('flash');
+  flash.style.opacity = '0.5';
+  setTimeout(() => { flash.style.opacity = '0'; }, 100);
+
+  const btn   = document.getElementById('catch-btn');
+  const cont  = document.getElementById('pokemon-container');
+  const tb    = document.getElementById('throw-ball');
+  const bRect = btn.getBoundingClientRect();
+  const pRect = cont.getBoundingClientRect();
+
+  // Position throw ball at catch button center
+  tb.style.left = (bRect.left + bRect.width/2  - 19) + 'px';
+  tb.style.top  = (bRect.top  + bRect.height/2 - 19) + 'px';
+  tb.style.display = 'block';
+  tb.style.transition = 'none';
+
+  const tx = pRect.left + pRect.width/2  - 19;
+  const ty = pRect.top  + pRect.height/2 - 19;
+
+  requestAnimationFrame(() => {
+    tb.style.transition = 'left 0.38s ease-in, top 0.28s ease-in';
+    tb.style.left = tx + 'px';
+    tb.style.top  = ty + 'px';
+  });
+
+  setTimeout(() => {
+    tb.style.display = 'none';
+    cont.style.opacity = '0';
+    cont.style.transition = 'opacity 0.2s';
+
+    btn.classList.add('ball-shaking');
+    setTimeout(() => {
+      btn.classList.remove('ball-shaking');
+      cont.style.opacity = '';
+      cont.style.transition = '';
+      showCatch();
+    }, 1600);
+  }, 400);
+}
+
+/* ═══════════ CATCH RESULT ═══════════ */
+function showCatch() {
+  const p = current;
+  const cardId = CARD_MAP[p.name] || null;
+  const already = cardId ? !!owned[cardId] : false;
+
+  if (cardId) {
+    owned[cardId] = true;
+    saveOwned();
+  }
+
+  sessionN++;
+  document.getElementById('session-count').textContent = sessionN;
+
+  document.getElementById('caught-sprite').src = spriteUrl(p.dex);
+  document.getElementById('caught-name').textContent   = p.name;
+  document.getElementById('caught-rarity').textContent = p.rarity;
+  document.getElementById('catch-sub').textContent     = already
+    ? '⭐ Already in your collection!'
+    : '✅ Added to your collection!';
+
+  document.getElementById('catch-overlay').classList.add('show');
+}
+
+function closeCatch() {
+  document.getElementById('catch-overlay').classList.remove('show');
+  spawnNext();
+}
+
+/* ═══════════ RUN AWAY ═══════════ */
+function runAway() {
+  const cont = document.getElementById('pokemon-container');
+  cont.style.transition = 'opacity 0.3s, transform 0.3s';
+  cont.style.opacity    = '0';
+  cont.style.transform  = 'scale(0.4) translateY(-60px)';
+
+  const fl = document.getElementById('flee-overlay');
+  fl.classList.add('show');
+  setTimeout(() => {
+    fl.classList.remove('show');
+    cont.style.transform  = '';
+    cont.style.transition = '';
+    spawnNext();
+  }, 950);
+}
+
+/* ═══════════ INIT ═══════════ */
+loadOwned();
+</script>
+</body>
+</html>
